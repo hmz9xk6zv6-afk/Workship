@@ -28,14 +28,17 @@ export default async function handler(req, res) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      res.status(500).json({ error: 'Token error', detail: err });
-      return;
+      return res.status(200).json({ debug: 'token_failed', status: tokenRes.status, detail: err });
     }
 
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
 
-    // Step 2: Call new DVSA MOT History API
+    if (!accessToken) {
+      return res.status(200).json({ debug: 'no_token', tokenData });
+    }
+
+    // Step 2: Call DVSA MOT History API
     const cleanReg = reg.toUpperCase().replace(/\s/g, '');
     const motRes = await fetch(
       `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${cleanReg}`,
@@ -48,15 +51,13 @@ export default async function handler(req, res) {
       }
     );
 
+    const rawText = await motRes.text();
+
     if (!motRes.ok) {
-      res.status(motRes.status).json({ error: `DVSA error ${motRes.status}` });
-      return;
+      return res.status(200).json({ debug: 'mot_failed', status: motRes.status, body: rawText });
     }
 
-    const vehicle = await motRes.json();
-
-    // New API returns a single vehicle object with motTests array
-    // Normalise to match what our app expects
+    const vehicle = JSON.parse(rawText);
     const motTests = vehicle.motTests || [];
     const latest = motTests[0];
 
@@ -74,6 +75,6 @@ export default async function handler(req, res) {
     res.status(200).json(normalised);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(200).json({ debug: 'exception', error: err.message });
   }
 }
