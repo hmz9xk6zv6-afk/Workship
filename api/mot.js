@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const { reg, debug } = req.query;
+  const { reg } = req.query;
   if (!reg) { res.status(400).json({ error: 'No registration provided' }); return; }
 
   const clientId = process.env.DVSA_CLIENT_ID;
@@ -49,31 +49,16 @@ export default async function handler(req, res) {
     }
 
     const vehicle = await motRes.json();
-
-    // If debug mode, return full raw response
-    if (debug) {
-      return res.status(200).json({ raw: vehicle });
-    }
-
     const motTests = vehicle.motTests || [];
     const latest = motTests[0];
 
-    // For new vehicles with no MOT yet, use firstUsedDate + 3 years
-    let expiryDate = latest?.expiryDate || null;
-    let isDue = false;
-
-    if (!expiryDate && vehicle.firstUsedDate) {
-      const firstUsed = new Date(vehicle.firstUsedDate);
-      firstUsed.setFullYear(firstUsed.getFullYear() + 3);
-      expiryDate = firstUsed.toISOString().split('T')[0];
-      isDue = true;
-    }
+    // Use motTestExpiryDate from latest test, OR motTestDueDate for new vehicles
+    const expiryDate = latest?.expiryDate || vehicle.motTestDueDate || null;
+    const isDue = !latest && !!vehicle.motTestDueDate;
 
     const normalised = [{
       make: vehicle.make || '',
       model: vehicle.model || '',
-      firstUsedDate: vehicle.firstUsedDate || null,
-      isDue,
       motTests: expiryDate ? [{
         expiryDate,
         testResult: isDue ? 'DUE' : (latest?.testResult || 'PASSED'),
