@@ -10,14 +10,14 @@
 :root{--ws-black:#1e1c1b;--ws-accent:#e8a020;--ws-accent2:#c47a15;--ws-muted:#8a8278}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1e1c1b;background:#f5f0e8;min-height:100vh}
 .app{max-width:1300px;margin:0 auto;padding:16px}
-.ws-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--ws-black);border-radius:12px;margin-bottom:12px}
+.ws-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--ws-black);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
 .ws-logo-text{font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial}
 .ws-logo-text span{color:var(--ws-accent)}
 .ws-tagline{font-size:10px;color:var(--ws-muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .ws-sync{font-size:11px;padding:4px 10px;border-radius:20px;background:#3d3a37;color:#aaa;font-weight:600}
 .ws-sync.ok{background:#0a5236;color:#6ee7b7}
 .ws-sync.err{background:#7f1d1d;color:#fca5a5}
-.ws-nav{display:flex;gap:2px}
+.ws-nav{display:flex;gap:2px;flex-wrap:wrap}
 .ws-nav-btn{padding:8px 14px;border:none;background:transparent;cursor:pointer;font-size:11px;font-weight:700;color:var(--ws-muted);letter-spacing:0.5px;text-transform:uppercase;border-radius:6px}
 .ws-nav-btn:hover{background:#3d3a37;color:#fff}
 .ws-nav-btn.active{background:var(--ws-accent);color:var(--ws-black)}
@@ -45,8 +45,12 @@ tr:last-child td{border-bottom:none}
 .badge-pending{background:#fef3cd;color:#856404}
 .badge-done{background:#d1e7dd;color:#0a5236}
 .badge-inprogress{background:#cfe2ff;color:#084298}
+.badge-locktel{background:#e8f4fd;color:#084298}
+.badge-assets{background:#f0fdf4;color:#0a5236}
+.badge-herd{background:#fef3cd;color:#856404}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 .dawid-panel{background:var(--ws-black);border-radius:12px;padding:14px;margin-bottom:12px}
 .dawid-header{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ws-accent);margin-bottom:10px}
 .mot-ok{color:#0a5236;font-weight:600}
@@ -68,6 +72,8 @@ tr:last-child td{border-bottom:none}
 .job-other{background:#8b5cf6;color:#fff}
 .progress-bar{height:4px;background:#e5e7eb;border-radius:2px;margin-top:8px;overflow:hidden}
 .progress-fill{height:100%;background:var(--ws-accent);border-radius:2px;transition:width 0.3s}
+.loading{text-align:center;padding:20px;color:#8a8278;font-size:12px}
+.inactive-row{opacity:0.45}
 </style>
 </head>
 <body>
@@ -77,12 +83,13 @@ tr:last-child td{border-bottom:none}
     <div class="ws-logo-text">WORK<span>SHIP</span></div>
     <div class="ws-tagline">Workshop Manager</div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
     <span class="ws-sync" id="sync-status">Connecting...</span>
     <div class="ws-nav">
       <button class="ws-nav-btn active" onclick="showTab('schedule',this)">&#128197; Schedule</button>
       <button class="ws-nav-btn" onclick="showTab('stock',this)">&#128230; Stock</button>
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
+      <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
     </div>
   </div>
 </div>
@@ -212,60 +219,70 @@ tr:last-child td{border-bottom:none}
   </div>
   <div class="ws-card">
     <p class="ws-section-label">Fleet MOT overview</p>
-    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
+    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Owner</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
     <tbody id="mot-tbody"></tbody></table>
   </div>
 </div>
+
+<!-- FLEET -->
+<div id="tab-fleet" class="tab">
+  <div class="metrics-row">
+    <div class="ws-metric"><div class="ws-metric-label">Total vehicles</div><div class="ws-metric-value" id="f-total">—</div></div>
+    <div class="ws-metric"><div class="ws-metric-label">Active</div><div class="ws-metric-value" id="f-active">—</div></div>
+    <div class="ws-metric"><div class="ws-metric-label">Inactive</div><div class="ws-metric-value" id="f-inactive" style="color:#8a8278">—</div></div>
+  </div>
+  <div class="ws-card">
+    <p class="ws-section-label">Add new vehicle</p>
+    <div class="form-row4">
+      <div><label>Registration</label><input type="text" id="v-reg" placeholder="e.g. AB12CDE" style="text-transform:uppercase"></div>
+      <div><label>Make</label><input type="text" id="v-make" placeholder="e.g. Ford"></div>
+      <div><label>Model</label><input type="text" id="v-model" placeholder="e.g. Transit"></div>
+      <div><label>Owner</label>
+        <select id="v-owner">
+          <option>Locktel</option><option>Assets</option><option>Herd</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px"><button class="btn btn-primary" onclick="addVehicle()">+ Add vehicle</button></div>
+  </div>
+  <div class="ws-card">
+    <p class="ws-section-label">Fleet list</p>
+    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Owner</th><th>Status</th><th></th></tr></thead>
+    <tbody id="fleet-tbody"></tbody></table>
+  </div>
 </div>
 
+</div>
 <script>
 const SUPA_URL='https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 
-const VEHICLES=[
-  {reg:'AP22BLX',make:'Renault',model:'Cherry Picker'},{reg:'AP73PXX',make:'Renault',model:'Cherry Picker'},
-  {reg:'AU69FYG',make:'BMW',model:'530i'},{reg:'BK20MUU',make:'Ford',model:'Luton'},
-  {reg:'DV24TVU',make:'Nissan',model:'Interstellar'},{reg:'DV24TXC',make:'Nissan',model:'Interstellar'},
-  {reg:'DV24UAK',make:'Nissan',model:'Interstellar'},{reg:'FG73WHK',make:'Mazda',model:'CX-30'},
-  {reg:'FG73WHM',make:'Mazda',model:'CX-30'},{reg:'FG73WHR',make:'Mazda',model:'CX-30'},
-  {reg:'FH73LFZ',make:'Mazda',model:'CX-30'},{reg:'FL73YAD',make:'Ford',model:'Transit'},
-  {reg:'FL73YDP',make:'Ford',model:'Transit'},{reg:'FP72XMB',make:'Renault',model:'Trafic'},
-  {reg:'FP72XMD',make:'Renault',model:'Trafic'},{reg:'FP73BWH',make:'Renault',model:'Trafic'},
-  {reg:'FP73BWJ',make:'Renault',model:'Trafic'},{reg:'FP73YBO',make:'Mazda',model:'CX-30'},
-  {reg:'FP73YXE',make:'Renault',model:'Trafic'},{reg:'FP73YXA',make:'Renault',model:'Trafic'},
-  {reg:'HK71JXR',make:'Ford',model:'Transit'},{reg:'HK71JXS',make:'Ford',model:'Transit'},
-  {reg:'HK71JXW',make:'Ford',model:'Transit'},{reg:'HK71JYJ',make:'Ford',model:'Transit'},
-  {reg:'HK71YPP',make:'Ford',model:'Transit'},{reg:'HN21YJM',make:'Ford',model:'Tipper'},
-  {reg:'HN22VFY',make:'Ford',model:'Transit'},{reg:'HN22VFZ',make:'Ford',model:'Transit'},
-  {reg:'HN22VGO',make:'Ford',model:'Transit'},{reg:'HN22VGU',make:'Ford',model:'Transit'},
-  {reg:'HN22VHM',make:'Ford',model:'Transit'},{reg:'HN72WZD',make:'Ford',model:'Tipper'},
-  {reg:'HN74OFX',make:'Ford',model:'Transit'},{reg:'HN74OHE',make:'Ford',model:'Transit'},
-  {reg:'HS71BGZ',make:'Ford',model:'Transit'},{reg:'HT71VKJ',make:'Ford',model:'Transit'},
-  {reg:'HT71WKV',make:'Ford',model:'Transit'},{reg:'HV21ZTE',make:'Ford',model:'Transit'},
-  {reg:'KE23GYN',make:'Peugeot',model:'Boxer'},{reg:'KE23JOU',make:'Peugeot',model:'Boxer'},
-  {reg:'KE23JOV',make:'Peugeot',model:'Boxer'},{reg:'KE23JPJ',make:'Peugeot',model:'Boxer'},
-  {reg:'KE23JPO',make:'Peugeot',model:'Boxer'},{reg:'KP23DSE',make:'Mercedes',model:'Tipper'},
-  {reg:'OV19VBB',make:'Mercedes',model:'C220D'},{reg:'SK69UTO',make:'BMW',model:'320i xDrive'},
-  {reg:'SL70AWW',make:'Mercedes',model:'GLB'},{reg:'SM74DLF',make:'Mercedes',model:'EQB'},
-  {reg:'VE72XKO',make:'Vauxhall',model:'Movano'},{reg:'VE72XKP',make:'Vauxhall',model:'Movano'},
-  {reg:'VE72XLA',make:'Vauxhall',model:'Movano'},{reg:'VE72XLB',make:'Vauxhall',model:'Movano'},
-  {reg:'VE72ZNM',make:'Vauxhall',model:'Movano'},{reg:'VK22NVM',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22NWA',make:'Vauxhall',model:'Movano'},{reg:'VK22NWT',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22NXA',make:'Vauxhall',model:'Movano'},{reg:'VK22NXD',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22NXE',make:'Vauxhall',model:'Movano'},{reg:'VK22NXV',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22NYC',make:'Vauxhall',model:'Movano'},{reg:'VK22ODT',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22OET',make:'Vauxhall',model:'Movano'},{reg:'VK22OGX',make:'Vauxhall',model:'Movano'},
-  {reg:'VK22OSO',make:'Vauxhall',model:'Movano'},{reg:'YN69OSO',make:'Volvo',model:'V90'},
-];
-
 const SLOTS=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
-let jobs=[],stock=[],motData={},weekOffset=0;
+let jobs=[],stock=[],motData={},vehicles=[],weekOffset=0;
 
 function setSyncStatus(ok,msg){const el=document.getElementById('sync-status');el.textContent=msg;el.className='ws-sync '+(ok?'ok':'err');}
-async function loadJobs(){const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});if(error){setSyncStatus(false,'DB error');return;}jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();}
+
+async function loadVehicles(){
+  const{data}=await sb.from('vehicles').select('*').order('reg');
+  vehicles=data||[];
+  populateVehicleDropdown();
+}
+async function loadJobs(){
+  const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});
+  if(error){setSyncStatus(false,'DB error');return;}
+  jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();
+}
 async function loadStock(){const{data}=await sb.from('stock').select('*').order('id');stock=data||[];renderStock();}
 async function loadMOT(){const{data}=await sb.from('mot_data').select('*');motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();}
+
+function populateVehicleDropdown(){
+  const sel=document.getElementById('job-vrn');
+  sel.innerHTML='<option value="">Select vehicle...</option>';
+  vehicles.filter(v=>v.active).forEach(v=>{
+    sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));
+  });
+}
 
 function fmt(d){return d.toISOString().split('T')[0];}
 function fmtDisp(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
@@ -275,7 +292,10 @@ function showTab(t,btn){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.ws-nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');btn.classList.add('active');
-  if(t==='schedule')loadJobs();if(t==='stock')loadStock();if(t==='mot')loadMOT();
+  if(t==='schedule')loadJobs();
+  if(t==='stock')loadStock();
+  if(t==='mot'){loadVehicles();loadMOT();}
+  if(t==='fleet'){loadVehicles();renderFleet();}
 }
 
 function renderSchedule(){
@@ -300,7 +320,7 @@ function renderSchedule(){
   });
   document.getElementById('cal-grid').innerHTML=html;
   const wj=jobs.filter(j=>getWeekDates(weekOffset).some(d=>fmt(d)===j.date));
-  const tj=jobs.filter(j=>j.date===today);
+  const tj=jobs.filter(j=>j.date===fmt(new Date()));
   document.getElementById('m-week').textContent=wj.length+' job'+(wj.length!==1?'s':'');
   document.getElementById('m-ramp').innerHTML=tj.length>0?`<span style="color:#856404">Busy (${tj.length})</span>`:`<span style="color:#0a5236">Free</span>`;
   document.getElementById('m-pending').textContent=jobs.filter(j=>j.status==='pending').length;
@@ -311,7 +331,7 @@ function renderSchedule(){
 
 function renderJobsTable(){
   const sorted=[...jobs].sort((a,b)=>b.date.localeCompare(a.date));
-  const veh=r=>VEHICLES.find(v=>v.reg===r)||{make:'?'};
+  const veh=r=>vehicles.find(v=>v.reg===r)||{make:'?'};
   document.getElementById('jobs-tbody').innerHTML=sorted.length?sorted.map(j=>`<tr>
     <td style="font-size:12px;color:#8a8278">${j.date}</td><td>${j.slot||'09:00'}</td><td>${j.hours||1}h</td>
     <td style="font-weight:600">${j.reg}</td><td style="color:#8a8278">${veh(j.reg).make}</td>
@@ -373,47 +393,38 @@ async function dvsa(reg){
   const latest=(data[0].motTests||[])[0];
   return latest?{expiry:latest.expiryDate,result:latest.testResult,mileage:latest.odometerValue,make:data[0].make,model:data[0].model}:null;
 }
-
 async function setMOT(reg,val){
   await sb.from('mot_data').upsert({reg,expiry:val,updated_at:new Date().toISOString()});
   motData[reg]=val;
 }
-
 async function lookupMOT(){
   const reg=document.getElementById('mot-lookup').value.trim().toUpperCase().replace(/\s/g,'');
   if(!reg){alert('Enter a registration.');return;}
   const el=document.getElementById('mot-result');
   el.innerHTML='<span style="color:#8a8278">Checking DVSA...</span>';
   const result=await dvsa(reg);
-  if(!result){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">No records found or DVSA error.</div>';return;}
+  if(!result){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">No records found.</div>';return;}
   await setMOT(reg,result.expiry);
   const d=new Date(result.expiry),diff=Math.ceil((d-new Date())/864e5);
   const col=diff<0?'#dc2626':diff<=60?'#856404':'#0a5236';
   el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px">
     <p style="font-weight:700;margin-bottom:6px">${result.make||''} ${result.model||''} \u2014 ${reg}</p>
-    <p>MOT expires: <span style="color:${col};font-weight:600">${result.expiry} (${diff<0?'expired':diff+'d remaining'})</span></p>
-    <p style="color:#8a8278;font-size:11px;margin-top:4px">Last result: ${result.result} \u00b7 Mileage: ${result.mileage||'?'}</p>
+    <p>MOT expires: <span style="color:${col};font-weight:600">${result.expiry} (${diff<0?'expired':diff+'d'})</span></p>
   </div>`;
   renderMOT();
 }
-
 async function checkAllFleet(){
   const btn=document.getElementById('check-all-btn');
   const prog=document.getElementById('check-all-progress');
   const statusEl=document.getElementById('check-all-status');
   const fillEl=document.getElementById('progress-fill');
-  btn.disabled=true;btn.textContent='Checking...';
-  prog.style.display='block';
+  btn.disabled=true;btn.textContent='Checking...';prog.style.display='block';
+  const active=vehicles.filter(v=>v.active);
   let done=0,found=0,notFound=0;
-  const total=VEHICLES.length;
-  for(const v of VEHICLES){
-    statusEl.textContent=`Checking ${v.reg} (${done+1}/${total})...`;
-    fillEl.style.width=((done/total)*100)+'%';
-    try{
-      const result=await dvsa(v.reg);
-      if(result){await setMOT(v.reg,result.expiry);found++;}
-      else{notFound++;}
-    }catch(e){notFound++;}
+  for(const v of active){
+    statusEl.textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
+    fillEl.style.width=((done/active.length)*100)+'%';
+    try{const result=await dvsa(v.reg);if(result){await setMOT(v.reg,result.expiry);found++;}else{notFound++;}}catch(e){notFound++;}
     done++;
     await new Promise(r=>setTimeout(r,300));
   }
@@ -422,19 +433,20 @@ async function checkAllFleet(){
   btn.disabled=false;btn.textContent='&#128197; Check all fleet';
   renderMOT();
 }
-
 function renderMOT(){
   const today=new Date();
-  document.getElementById('mot-tbody').innerHTML=VEHICLES.map(v=>{
+  const active=vehicles.filter(v=>v.active);
+  document.getElementById('mot-tbody').innerHTML=active.map(v=>{
     const exp=motData[v.reg];
     let s='<span style="color:#8a8278;font-size:11px">Not checked</span>';
     if(exp){const d=new Date(exp),diff=Math.ceil((d-today)/864e5);s=diff<0?'<span class="mot-due">&#9888; Expired</span>':diff<=30?`<span class="mot-due">&#9888; ${diff}d left</span>`:diff<=60?`<span class="mot-warn">&#9888; ${diff}d left</span>`:`<span class="mot-ok">&#10003; ${diff}d left</span>`;}
+    const ownerBadge=v.owner?`<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>`:'—';
     return`<tr><td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
+    <td>${ownerBadge}</td>
     <td style="color:#8a8278;font-size:12px">${exp||'\u2014'}</td><td>${s}</td>
     <td><button class="btn btn-sm" onclick="singleDVSA('${v.reg}',this)">&#8635;</button></td></tr>`;
   }).join('');
 }
-
 async function singleDVSA(reg,btn){
   btn.textContent='...';btn.disabled=true;
   const result=await dvsa(reg);
@@ -443,14 +455,58 @@ async function singleDVSA(reg,btn){
   renderMOT();
 }
 
-const sel=document.getElementById('job-vrn');
-VEHICLES.forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
+function renderFleet(){
+  const active=vehicles.filter(v=>v.active);
+  const inactive=vehicles.filter(v=>!v.active);
+  document.getElementById('f-total').textContent=vehicles.length;
+  document.getElementById('f-active').textContent=active.length;
+  document.getElementById('f-inactive').textContent=inactive.length;
+  document.getElementById('fleet-tbody').innerHTML=vehicles.length?vehicles.map(v=>{
+    const ownerBadge=v.owner?`<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>`:'—';
+    return`<tr class="${v.active?'':'inactive-row'}">
+      <td style="font-weight:700">${v.reg}</td>
+      <td>${v.make}</td>
+      <td style="color:#8a8278">${v.model}</td>
+      <td>${ownerBadge}</td>
+      <td><span class="badge ${v.active?'badge-done':'badge-pending'}">${v.active?'Active':'Inactive'}</span></td>
+      <td style="display:flex;gap:4px">
+        <button class="btn btn-sm" onclick="toggleVehicle(${v.id},${v.active})">${v.active?'Deactivate':'Activate'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteVehicle(${v.id})">\u2715</button>
+      </td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px;color:#8a8278">No vehicles</td></tr>';
+}
+
+async function addVehicle(){
+  const reg=document.getElementById('v-reg').value.trim().toUpperCase();
+  const make=document.getElementById('v-make').value.trim();
+  const model=document.getElementById('v-model').value.trim();
+  if(!reg||!make||!model){alert('Fill in reg, make and model.');return;}
+  const{error}=await sb.from('vehicles').insert([{reg,make,model,owner:document.getElementById('v-owner').value,active:true}]);
+  if(error){alert('Error: '+error.message);return;}
+  ['v-reg','v-make','v-model'].forEach(id=>document.getElementById(id).value='');
+  await loadVehicles();renderFleet();
+}
+
+async function toggleVehicle(id,active){
+  await sb.from('vehicles').update({active:!active}).eq('id',id);
+  await loadVehicles();renderFleet();
+}
+
+async function deleteVehicle(id){
+  if(!confirm('Permanently delete this vehicle?'))return;
+  await sb.from('vehicles').delete().eq('id',id);
+  await loadVehicles();renderFleet();
+}
+
 setSyncStatus(false,'Connecting...');
-loadJobs();loadStock();loadMOT();
+loadVehicles().then(()=>loadJobs());
+loadStock();loadMOT();
+
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
   .on('postgres_changes',{event:'*',schema:'public',table:'stock'},()=>loadStock())
   .on('postgres_changes',{event:'*',schema:'public',table:'mot_data'},()=>loadMOT())
+  .on('postgres_changes',{event:'*',schema:'public',table:'vehicles'},()=>{loadVehicles();})
   .subscribe();
 </script>
 </body>
