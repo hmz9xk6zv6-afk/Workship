@@ -28,62 +28,47 @@ export default async function handler(req, res) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      res.status(500).json({ error: 'Token error: ' + err });
+      res.status(500).json({ error: 'Token error', detail: err });
       return;
     }
 
     const tokenData = await tokenRes.json();
     const accessToken = tokenData.access_token;
 
-    // Step 2: Call DVSA MOT History API
+    // Step 2: Call new DVSA MOT History API
+    const cleanReg = reg.toUpperCase().replace(/\s/g, '');
     const motRes = await fetch(
-      `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${reg.toUpperCase().replace(/\s/g, '')}`,
+      `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${cleanReg}`,
       {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'X-Api-Key': apiKey,
+          'X-API-Key': apiKey,
           'Accept': 'application/json'
         }
       }
     );
 
     if (!motRes.ok) {
-      // Fallback to beta API
-      const betaRes = await fetch(
-        `https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests?registration=${reg.toUpperCase().replace(/\s/g, '')}`,
-        {
-          headers: {
-            'Accept': 'application/json+v6',
-            'x-api-key': apiKey
-          }
-        }
-      );
-      if (!betaRes.ok) {
-        res.status(motRes.status).json({ error: `DVSA error ${motRes.status}` });
-        return;
-      }
-      const betaData = await betaRes.json();
-      res.status(200).json(betaData);
+      res.status(motRes.status).json({ error: `DVSA error ${motRes.status}` });
       return;
     }
 
-    const motData = await motRes.json();
+    const vehicle = await motRes.json();
 
-    // Normalise new API format
-    const tests = [];
-    if (motData.motTestExpiryDate) {
-      tests.push({
-        expiryDate: motData.motTestExpiryDate,
-        testResult: 'PASSED',
-        odometerValue: motData.odometerReadings?.[0]?.value || '?',
-        odometerUnit: motData.odometerReadings?.[0]?.unit || ''
-      });
-    }
+    // New API returns a single vehicle object with motTests array
+    // Normalise to match what our app expects
+    const motTests = vehicle.motTests || [];
+    const latest = motTests[0];
 
     const normalised = [{
-      make: motData.make || '',
-      model: motData.model || '',
-      motTests: tests
+      make: vehicle.make || '',
+      model: vehicle.model || '',
+      motTests: latest ? [{
+        expiryDate: latest.expiryDate,
+        testResult: latest.testResult || 'PASSED',
+        odometerValue: latest.odometerValue || '?',
+        odometerUnit: latest.odometerUnit || 'mi'
+      }] : []
     }];
 
     res.status(200).json(normalised);
