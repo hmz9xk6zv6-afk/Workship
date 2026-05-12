@@ -27,10 +27,18 @@ module.exports = async function handler(req, res) {
       const expiry = new Date(mot.expiry);
       expiry.setHours(0,0,0,0);
       const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-      if (diff === 10) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
-      else if (diff === 30) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
-      else if (diff === 50) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
-    }
+     const isWeekend = (d) => d === 0 || d === 6;
+const dow = today.getDay();
+const checkDiff = (target) => {
+  if (diff === target) return true;
+  if (dow === 1 && (diff === target - 1 || diff === target - 2)) return true;
+  return false;
+};
+if (!isWeekend(dow)) {
+  if (checkDiff(10)) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
+  else if (checkDiff(30)) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
+  else if (checkDiff(50)) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
+}
 
     const allAlerts = [...alerts.critical, ...alerts.warning, ...alerts.upcoming];
 
