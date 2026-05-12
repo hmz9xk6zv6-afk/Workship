@@ -27,9 +27,9 @@ module.exports = async function handler(req, res) {
       const expiry = new Date(mot.expiry);
       expiry.setHours(0,0,0,0);
       const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-      if (diff <= 10) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
-      else if (diff <= 30) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
-      else if (diff <= 50) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
+      if (diff === 10) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
+      else if (diff === 30) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
+      else if (diff === 50) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
     }
 
     const allAlerts = [...alerts.critical, ...alerts.warning, ...alerts.upcoming];
