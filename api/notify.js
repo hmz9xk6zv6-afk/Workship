@@ -18,27 +18,29 @@ module.exports = async function handler(req, res) {
 
     const today = new Date();
     today.setHours(0,0,0,0);
+    const dow = today.getDay();
+
+    const isWeekend = (d) => d === 0 || d === 6;
+    const checkDiff = (diff, target) => {
+      if (diff === target) return true;
+      if (dow === 1 && (diff === target - 1 || diff === target - 2)) return true;
+      return false;
+    };
 
     const alerts = { critical: [], warning: [], upcoming: [] };
 
-    for (const v of vehicles) {
-      const mot = motData.find(m => m.reg === v.reg);
-      if (!mot || !mot.expiry) continue;
-      const expiry = new Date(mot.expiry);
-      expiry.setHours(0,0,0,0);
-      const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-     const isWeekend = (d) => d === 0 || d === 6;
-const dow = today.getDay();
-const checkDiff = (target) => {
-  if (diff === target) return true;
-  if (dow === 1 && (diff === target - 1 || diff === target - 2)) return true;
-  return false;
-};
-if (!isWeekend(dow)) {
-  if (checkDiff(10)) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
-  else if (checkDiff(30)) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
-  else if (checkDiff(50)) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
-}
+    if (!isWeekend(dow)) {
+      for (const v of vehicles) {
+        const mot = motData.find(m => m.reg === v.reg);
+        if (!mot || !mot.expiry) continue;
+        const expiry = new Date(mot.expiry);
+        expiry.setHours(0,0,0,0);
+        const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+        if (checkDiff(diff, 10)) alerts.critical.push({ ...v, expiry: mot.expiry, diff });
+        else if (checkDiff(diff, 30)) alerts.warning.push({ ...v, expiry: mot.expiry, diff });
+        else if (checkDiff(diff, 50)) alerts.upcoming.push({ ...v, expiry: mot.expiry, diff });
+      }
+    }
 
     const allAlerts = [...alerts.critical, ...alerts.warning, ...alerts.upcoming];
 
