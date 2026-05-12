@@ -1,6 +1,6 @@
 const SUPA_URL = 'https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
-const TO_EMAIL = 'peter.kriszt@locktelltd.co.uk';
+const TO_EMAIL = 'peter.kriszt@notonlyvans.com';
 
 module.exports = async function handler(req, res) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
