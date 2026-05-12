@@ -11,7 +11,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1e1c1b;background:#f5f0e8;min-height:100vh}
 .app{max-width:1300px;margin:0 auto;padding:16px}
 .ws-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--ws-black);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
-.ws-logo img{height:32px;filter:invert(1)}
+.ws-logo img{height:36px;filter:brightness(0) invert(1)}
 .ws-tagline{font-size:10px;color:var(--ws-muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .ws-sync{font-size:11px;padding:4px 10px;border-radius:20px;background:#3d3a37;color:#aaa;font-weight:600}
 .ws-sync.ok{background:#0a5236;color:#6ee7b7}
@@ -61,11 +61,14 @@ tr:last-child td{border-bottom:none}
 .cal-grid{display:grid;grid-template-columns:60px repeat(7,1fr);border-left:0.5px solid rgba(0,0,0,0.1);border-top:0.5px solid rgba(0,0,0,0.1)}
 .cal-head{background:#f5f0e8;padding:6px 4px;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase;color:#8a8278;border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1)}
 .cal-head.today{color:var(--ws-accent)}
-.cal-time{font-size:10px;color:#8a8278;font-weight:600;padding:0 6px;display:flex;align-items:flex-start;padding-top:4px;border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1);height:48px}
-.cal-cell{border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1);height:48px;position:relative;cursor:pointer}
+.cal-time{font-size:10px;color:#8a8278;font-weight:600;padding:0 6px;display:flex;align-items:flex-start;padding-top:4px;border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1);height:52px}
+.cal-cell{border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1);height:52px;position:relative;cursor:pointer}
 .cal-cell:hover{background:#fafafa}
 .cal-cell.today{background:#f0f7ff}
-.job-event{position:absolute;left:2px;right:2px;top:2px;border-radius:4px;padding:3px 5px;font-size:9px;font-weight:700;cursor:pointer;overflow:hidden;z-index:2;line-height:1.3}
+.job-event{position:absolute;left:2px;right:2px;top:2px;border-radius:4px;padding:4px 6px;font-size:11px;font-weight:700;cursor:pointer;overflow:hidden;z-index:2;line-height:1.4}
+.job-event .je-reg{font-size:12px;font-weight:800}
+.job-event .je-type{font-size:10px;opacity:0.9}
+.job-event .je-meta{font-size:10px;opacity:0.75}
 .job-peter{background:#e8a020;color:#1e1c1b}
 .job-dawid{background:#3b82f6;color:#fff}
 .job-other{background:#8b5cf6;color:#fff}
@@ -73,23 +76,24 @@ tr:last-child td{border-bottom:none}
 .progress-fill{height:100%;background:var(--ws-accent);border-radius:2px;transition:width 0.3s}
 .loading{text-align:center;padding:20px;color:#8a8278;font-size:12px}
 .inactive-row{opacity:0.45}
-/* Modal */
 .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:480px;margin:16px}
 .modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
-.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);font-size:13px}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);font-size:13px}
 .modal-row:last-of-type{border-bottom:none}
 .modal-label{color:#8a8278;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
-.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="ws-header">
-  <div class="ws-logo">
-    <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.png" alt="Workship" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-    <div style="display:none;font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial">WORK<span style="color:#e8a020">SHIP</span></div>
+  <div>
+    <div class="ws-logo">
+      <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.png" alt="Workship" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'">
+      <div id="logo-fallback" style="display:none;font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial">WORK<span style="color:#e8a020">SHIP</span></div>
+    </div>
     <div class="ws-tagline">Workshop Manager</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -103,7 +107,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
-<!-- JOB DETAIL MODAL -->
+<!-- MODAL -->
 <div class="modal-overlay" id="job-modal">
   <div class="modal">
     <div class="modal-title" id="modal-title"></div>
@@ -111,7 +115,7 @@ tr:last-child td{border-bottom:none}
     <div class="modal-actions">
       <button class="btn btn-sm" id="modal-start-btn" style="display:none" onclick="modalSetStatus('inprogress')">Start</button>
       <button class="btn btn-sm btn-primary" id="modal-done-btn" style="display:none" onclick="modalSetStatus('done')">Done</button>
-      <button class="btn btn-sm btn-danger" onclick="modalDelete()">Delete job</button>
+      <button class="btn btn-sm btn-danger" onclick="modalDelete()">Delete</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>
     </div>
   </div>
@@ -176,7 +180,8 @@ tr:last-child td{border-bottom:none}
       <div><label>Assigned to</label>
         <select id="job-assigned"><option>Peter</option><option>Dawid</option><option>Other</option></select>
       </div>
-      <div><label>Notes <span id="notes-required" style="color:#dc2626;display:none">*required</span></label>
+      <div>
+        <label>Notes <span id="notes-required" style="color:#dc2626;display:none">* required</span></label>
         <input type="text" id="job-notes" placeholder="Optional...">
       </div>
     </div>
@@ -184,7 +189,7 @@ tr:last-child td{border-bottom:none}
   </div>
   <div class="ws-card">
     <p class="ws-section-label">All jobs</p>
-    <table><thead><tr><th>Date</th><th>Start</th><th>Duration</th><th>Vehicle</th><th>Make</th><th>Type</th><th>Assigned</th><th>Status</th><th></th></tr></thead>
+    <table><thead><tr><th>Date</th><th>Start</th><th>Dur</th><th>Vehicle</th><th>Make</th><th>Type</th><th>Assigned</th><th>Status</th><th></th></tr></thead>
     <tbody id="jobs-tbody"></tbody></table>
   </div>
 </div>
@@ -246,6 +251,22 @@ tr:last-child td{border-bottom:none}
     <div id="mot-result" style="margin-top:12px;font-size:13px"></div>
   </div>
   <div class="ws-card">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:150px">
+        <label>Filter by make</label>
+        <select id="mot-filter-make" onchange="renderMOT()">
+          <option value="">All makes</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label>Sort by</label>
+        <select id="mot-sort" onchange="renderMOT()">
+          <option value="days">Days remaining (least first)</option>
+          <option value="make">Make (A–Z)</option>
+          <option value="reg">Registration (A–Z)</option>
+        </select>
+      </div>
+    </div>
     <p class="ws-section-label">Fleet MOT overview</p>
     <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Owner</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
     <tbody id="mot-tbody"></tbody></table>
@@ -302,7 +323,7 @@ function checkNotesRequired(){
   const type=document.getElementById('job-type').value;
   const req=document.getElementById('notes-required');
   const notes=document.getElementById('job-notes');
-  if(type==='Other'){req.style.display='inline';notes.placeholder='Required — describe the job...';}
+  if(type==='Other'){req.style.display='inline';notes.placeholder='Required \u2014 describe the job...';}
   else{req.style.display='none';notes.placeholder='Optional...';}
 }
 
@@ -333,10 +354,14 @@ function renderSchedule(){
       const dayJobs=jobs.filter(j=>j.date===ds&&j.slot===slot);
       let ev='';
       dayJobs.forEach(j=>{
-        const h=parseInt(j.hours)||1,hpx=(h*48)-4;
+        const h=parseInt(j.hours)||1,hpx=(h*52)-4;
         const cc=j.assigned==='Peter'?'job-peter':j.assigned==='Dawid'?'job-dawid':'job-other';
-        const notesLine=j.notes?`<div style="opacity:0.8;font-weight:400;font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.notes}</div>`:'';
-        ev+=`<div class="job-event ${cc}" style="height:${hpx}px" onclick="event.stopPropagation();openModal('${j.id}')" title="${j.reg} \u2014 ${j.type} (${h}h)">${j.reg}<br>${j.type}<br><span style="opacity:0.8;font-weight:400">${h}h \u2022 ${j.assigned}</span>${notesLine}</div>`;
+        ev+=`<div class="job-event ${cc}" style="height:${hpx}px" onclick="event.stopPropagation();openModal('${j.id}')">
+          <div class="je-reg">${j.reg}</div>
+          <div class="je-type">${j.type}</div>
+          <div class="je-meta">${h}h \u2022 ${j.assigned}</div>
+          ${j.notes&&h>=2?`<div class="je-meta" style="font-style:italic">${j.notes.substring(0,22)}${j.notes.length>22?'...':''}</div>`:''}
+        </div>`;
       });
       html+=`<div class="cal-cell${isT?' today':''}" onclick="prefillDate('${ds}','${slot}')">${ev}</div>`;
     });
@@ -347,7 +372,6 @@ function renderSchedule(){
   document.getElementById('m-week').textContent=wj.length+' job'+(wj.length!==1?'s':'');
   document.getElementById('m-ramp').innerHTML=tj.length>0?`<span style="color:#856404">Busy (${tj.length})</span>`:`<span style="color:#0a5236">Free</span>`;
   document.getElementById('m-pending').textContent=jobs.filter(j=>j.status==='pending').length;
-  // Show all jobs this week for all assignees
   document.getElementById('dawid-jobs').innerHTML=wj.length?wj.map(j=>{
     const cc=j.assigned==='Peter'?'#e8a020':j.assigned==='Dawid'?'#3b82f6':'#8b5cf6';
     const tc=j.assigned==='Peter'?'#1e1c1b':'#fff';
@@ -365,29 +389,17 @@ function openModal(id){
     <div class="modal-row"><span class="modal-label">Date</span><span>${j.date}</span></div>
     <div class="modal-row"><span class="modal-label">Time</span><span>${j.slot} (${j.hours||1}h)</span></div>
     <div class="modal-row"><span class="modal-label">Vehicle</span><span>${v.make} ${v.model}</span></div>
-    <div class="modal-row"><span class="modal-label">Assigned</span><span>${j.assigned||'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Assigned</span><span>${j.assigned||'\u2014'}</span></div>
     <div class="modal-row"><span class="modal-label">Status</span><span><span class="badge badge-${j.status}">${j.status}</span></span></div>
-    ${j.notes?`<div class="modal-row"><span class="modal-label">Notes</span><span>${j.notes}</span></div>`:''}
+    ${j.notes?`<div class="modal-row"><span class="modal-label">Notes</span><span style="max-width:280px;text-align:right">${j.notes}</span></div>`:''}
   `;
   document.getElementById('modal-start-btn').style.display=j.status==='pending'?'block':'none';
   document.getElementById('modal-done-btn').style.display=j.status==='inprogress'?'block':'none';
   document.getElementById('job-modal').classList.add('open');
 }
-
 function closeModal(){document.getElementById('job-modal').classList.remove('open');modalJobId=null;}
-
-async function modalSetStatus(s){
-  if(!modalJobId)return;
-  await sb.from('jobs').update({status:s}).eq('id',modalJobId);
-  closeModal();loadJobs();
-}
-
-async function modalDelete(){
-  if(!modalJobId)return;
-  if(!confirm('Delete this job?'))return;
-  await sb.from('jobs').delete().eq('id',modalJobId);
-  closeModal();loadJobs();
-}
+async function modalSetStatus(s){if(!modalJobId)return;await sb.from('jobs').update({status:s}).eq('id',modalJobId);closeModal();loadJobs();}
+async function modalDelete(){if(!modalJobId)return;if(!confirm('Delete this job?'))return;await sb.from('jobs').delete().eq('id',modalJobId);closeModal();loadJobs();}
 
 function renderJobsTable(){
   const sorted=[...jobs].sort((a,b)=>b.date.localeCompare(a.date));
@@ -406,19 +418,17 @@ function renderJobsTable(){
 }
 
 function prefillDate(date,slot){document.getElementById('job-date').value=date;document.getElementById('job-start').value=slot;}
-
 async function addJob(){
   const reg=document.getElementById('job-vrn').value,date=document.getElementById('job-date').value;
   const type=document.getElementById('job-type').value;
   const notes=document.getElementById('job-notes').value.trim();
   if(!reg||!date){alert('Select vehicle and date.');return;}
-  if(type==='Other'&&!notes){alert('Please add notes to describe the job when selecting "Other".');document.getElementById('job-notes').focus();return;}
+  if(type==='Other'&&!notes){alert('Please add notes when selecting "Other".');document.getElementById('job-notes').focus();return;}
   const job={id:Date.now().toString(),reg,date,slot:document.getElementById('job-start').value,hours:parseInt(document.getElementById('job-hours').value)||1,type,assigned:document.getElementById('job-assigned').value,notes,status:'pending'};
   const{error}=await sb.from('jobs').insert([job]);
   if(error){alert('Error: '+error.message);return;}
   document.getElementById('job-notes').value='';loadJobs();
 }
-
 async function setStatus(id,s){await sb.from('jobs').update({status:s}).eq('id',id);loadJobs();}
 async function removeJob(id){if(confirm('Delete this job?')){await sb.from('jobs').delete().eq('id',id);loadJobs();}}
 function prevWeek(){weekOffset--;loadJobs();}
@@ -474,25 +484,46 @@ async function lookupMOT(){
 async function checkAllFleet(){
   const btn=document.getElementById('check-all-btn');
   const prog=document.getElementById('check-all-progress');
-  const statusEl=document.getElementById('check-all-status');
-  const fillEl=document.getElementById('progress-fill');
   btn.disabled=true;btn.textContent='Checking...';prog.style.display='block';
   const active=vehicles.filter(v=>v.active);
   let done=0,found=0,notFound=0;
   for(const v of active){
-    statusEl.textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
-    fillEl.style.width=((done/active.length)*100)+'%';
+    document.getElementById('check-all-status').textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
+    document.getElementById('progress-fill').style.width=((done/active.length)*100)+'%';
     try{const result=await dvsa(v.reg);if(result){await setMOT(v.reg,result.expiry);found++;}else{notFound++;}}catch(e){notFound++;}
     done++;await new Promise(r=>setTimeout(r,300));
   }
-  fillEl.style.width='100%';
-  statusEl.textContent=`Done! ${found} updated, ${notFound} not found.`;
+  document.getElementById('progress-fill').style.width='100%';
+  document.getElementById('check-all-status').textContent=`Done! ${found} updated, ${notFound} not found.`;
   btn.disabled=false;btn.textContent='&#128197; Check all fleet';
   renderMOT();
 }
+
 function renderMOT(){
   const today=new Date();
-  const active=vehicles.filter(v=>v.active);
+  let active=vehicles.filter(v=>v.active);
+
+  // Populate make filter
+  const makeFilter=document.getElementById('mot-filter-make');
+  if(makeFilter){
+    const makes=[...new Set(active.map(v=>v.make))].sort();
+    const current=makeFilter.value;
+    makeFilter.innerHTML='<option value="">All makes</option>';
+    makes.forEach(m=>makeFilter.add(new Option(m,m)));
+    if(makes.includes(current))makeFilter.value=current;
+    if(makeFilter.value)active=active.filter(v=>v.make===makeFilter.value);
+  }
+
+  // Sort
+  const sort=document.getElementById('mot-sort')?.value||'days';
+  active=[...active].sort((a,b)=>{
+    if(sort==='make')return a.make.localeCompare(b.make);
+    if(sort==='reg')return a.reg.localeCompare(b.reg);
+    const da=motData[a.reg]?Math.ceil((new Date(motData[a.reg])-today)/864e5):9999;
+    const db=motData[b.reg]?Math.ceil((new Date(motData[b.reg])-today)/864e5):9999;
+    return da-db;
+  });
+
   document.getElementById('mot-tbody').innerHTML=active.map(v=>{
     const exp=motData[v.reg];
     let s='<span style="color:#8a8278;font-size:11px">Not checked</span>';
