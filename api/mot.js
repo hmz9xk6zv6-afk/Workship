@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const { reg } = req.query;
+  const { reg, debug } = req.query;
   if (!reg) { res.status(400).json({ error: 'No registration provided' }); return; }
 
   const clientId = process.env.DVSA_CLIENT_ID;
@@ -11,7 +11,6 @@ export default async function handler(req, res) {
   const apiKey = process.env.DVSA_API_KEY;
 
   try {
-    // Step 1: Get OAuth token
     const tokenRes = await fetch(
       'https://login.microsoftonline.com/a455b827-244f-4c97-b5b4-ce5d13b4d00c/oauth2/v2.0/token',
       {
@@ -28,53 +27,64 @@ export default async function handler(req, res) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      return res.status(200).json({ debug: 'token_failed', status: tokenRes.status, detail: err });
+      return res.status(500).json({ error: 'Token error', detail: err });
     }
 
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.access_token;
-
-    if (!accessToken) {
-      return res.status(200).json({ debug: 'no_token', tokenData });
-    }
-
-    // Step 2: Call DVSA MOT History API
+    const { access_token } = await tokenRes.json();
     const cleanReg = reg.toUpperCase().replace(/\s/g, '');
+
     const motRes = await fetch(
       `https://history.mot.api.gov.uk/v1/trade/vehicles/registration/${cleanReg}`,
       {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${access_token}`,
           'X-API-Key': apiKey,
           'Accept': 'application/json'
         }
       }
     );
 
-    const rawText = await motRes.text();
-
     if (!motRes.ok) {
-      return res.status(200).json({ debug: 'mot_failed', status: motRes.status, body: rawText });
+      return res.status(motRes.status).json({ error: `DVSA error ${motRes.status}` });
     }
 
-    const vehicle = JSON.parse(rawText);
+    const vehicle = await motRes.json();
+
+    // If debug mode, return full raw response
+    if (debug) {
+      return res.status(200).json({ raw: vehicle });
+    }
+
     const motTests = vehicle.motTests || [];
     const latest = motTests[0];
+
+    // For new vehicles with no MOT yet, use firstUsedDate + 3 years
+    let expiryDate = latest?.expiryDate || null;
+    let isDue = false;
+
+    if (!expiryDate && vehicle.firstUsedDate) {
+      const firstUsed = new Date(vehicle.firstUsedDate);
+      firstUsed.setFullYear(firstUsed.getFullYear() + 3);
+      expiryDate = firstUsed.toISOString().split('T')[0];
+      isDue = true;
+    }
 
     const normalised = [{
       make: vehicle.make || '',
       model: vehicle.model || '',
-      motTests: latest ? [{
-        expiryDate: latest.expiryDate,
-        testResult: latest.testResult || 'PASSED',
-        odometerValue: latest.odometerValue || '?',
-        odometerUnit: latest.odometerUnit || 'mi'
+      firstUsedDate: vehicle.firstUsedDate || null,
+      isDue,
+      motTests: expiryDate ? [{
+        expiryDate,
+        testResult: isDue ? 'DUE' : (latest?.testResult || 'PASSED'),
+        odometerValue: latest?.odometerValue || '?',
+        odometerUnit: latest?.odometerUnit || 'mi'
       }] : []
     }];
 
     res.status(200).json(normalised);
 
   } catch (err) {
-    res.status(200).json({ debug: 'exception', error: err.message });
+    res.status(500).json({ error: err.message });
   }
 }
