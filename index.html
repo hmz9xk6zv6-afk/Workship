@@ -11,8 +11,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1e1c1b;background:#f5f0e8;min-height:100vh}
 .app{max-width:1300px;margin:0 auto;padding:16px}
 .ws-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--ws-black);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
-.ws-logo-text{font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial}
-.ws-logo-text span{color:var(--ws-accent)}
+.ws-logo img{height:32px;filter:invert(1)}
 .ws-tagline{font-size:10px;color:var(--ws-muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .ws-sync{font-size:11px;padding:4px 10px;border-radius:20px;background:#3d3a37;color:#aaa;font-weight:600}
 .ws-sync.ok{background:#0a5236;color:#6ee7b7}
@@ -66,7 +65,7 @@ tr:last-child td{border-bottom:none}
 .cal-cell{border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1);height:48px;position:relative;cursor:pointer}
 .cal-cell:hover{background:#fafafa}
 .cal-cell.today{background:#f0f7ff}
-.job-event{position:absolute;left:2px;right:2px;top:2px;border-radius:4px;padding:3px 5px;font-size:10px;font-weight:700;cursor:pointer;overflow:hidden;z-index:2;line-height:1.3}
+.job-event{position:absolute;left:2px;right:2px;top:2px;border-radius:4px;padding:3px 5px;font-size:9px;font-weight:700;cursor:pointer;overflow:hidden;z-index:2;line-height:1.3}
 .job-peter{background:#e8a020;color:#1e1c1b}
 .job-dawid{background:#3b82f6;color:#fff}
 .job-other{background:#8b5cf6;color:#fff}
@@ -74,13 +73,23 @@ tr:last-child td{border-bottom:none}
 .progress-fill{height:100%;background:var(--ws-accent);border-radius:2px;transition:width 0.3s}
 .loading{text-align:center;padding:20px;color:#8a8278;font-size:12px}
 .inactive-row{opacity:0.45}
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:480px;margin:16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.06);font-size:13px}
+.modal-row:last-of-type{border-bottom:none}
+.modal-label{color:#8a8278;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
 </style>
 </head>
 <body>
 <div class="app">
 <div class="ws-header">
-  <div>
-    <div class="ws-logo-text">WORK<span>SHIP</span></div>
+  <div class="ws-logo">
+    <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.png" alt="Workship" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+    <div style="display:none;font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial">WORK<span style="color:#e8a020">SHIP</span></div>
     <div class="ws-tagline">Workshop Manager</div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -94,6 +103,20 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+<!-- JOB DETAIL MODAL -->
+<div class="modal-overlay" id="job-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" id="modal-start-btn" style="display:none" onclick="modalSetStatus('inprogress')">Start</button>
+      <button class="btn btn-sm btn-primary" id="modal-done-btn" style="display:none" onclick="modalSetStatus('done')">Done</button>
+      <button class="btn btn-sm btn-danger" onclick="modalDelete()">Delete job</button>
+      <button class="btn btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- SCHEDULE -->
 <div id="tab-schedule" class="tab active">
   <div class="metrics-row">
@@ -102,7 +125,7 @@ tr:last-child td{border-bottom:none}
     <div class="ws-metric"><div class="ws-metric-label">Pending</div><div class="ws-metric-value" id="m-pending">—</div></div>
   </div>
   <div class="dawid-panel">
-    <div class="dawid-header">&#128295; Dawid's jobs this week</div>
+    <div class="dawid-header">&#128295; Jobs this week</div>
     <div id="dawid-jobs" style="font-size:12px;color:#666">Loading...</div>
   </div>
   <div class="ws-card" style="padding:12px">
@@ -140,9 +163,12 @@ tr:last-child td{border-bottom:none}
         </select>
       </div>
       <div><label>Job type</label>
-        <select id="job-type">
-          <option>Service</option><option>MOT prep</option><option>Repair</option>
-          <option>Tyres</option><option>Bodywork</option><option>Inspection</option><option>Other</option>
+        <select id="job-type" onchange="checkNotesRequired()">
+          <option>Service</option><option>MOT prep</option>
+          <option>Tyres</option><option>Inspection</option>
+          <option>Cleaning</option><option>Full Valeting</option>
+          <option>Brake change</option><option>Suspension Change</option>
+          <option>Diagnostic</option><option>Other</option>
         </select>
       </div>
     </div>
@@ -150,7 +176,9 @@ tr:last-child td{border-bottom:none}
       <div><label>Assigned to</label>
         <select id="job-assigned"><option>Peter</option><option>Dawid</option><option>Other</option></select>
       </div>
-      <div><label>Notes</label><input type="text" id="job-notes" placeholder="Optional..."></div>
+      <div><label>Notes <span id="notes-required" style="color:#dc2626;display:none">*required</span></label>
+        <input type="text" id="job-notes" placeholder="Optional...">
+      </div>
     </div>
     <div style="margin-top:14px"><button class="btn btn-primary" onclick="addJob()">+ Add job</button></div>
   </div>
@@ -238,9 +266,7 @@ tr:last-child td{border-bottom:none}
       <div><label>Make</label><input type="text" id="v-make" placeholder="e.g. Ford"></div>
       <div><label>Model</label><input type="text" id="v-model" placeholder="e.g. Transit"></div>
       <div><label>Owner</label>
-        <select id="v-owner">
-          <option>Locktel</option><option>Assets</option><option>Herd</option><option>Other</option>
-        </select>
+        <select id="v-owner"><option>Locktel</option><option>Assets</option><option>Herd</option><option>Other</option></select>
       </div>
     </div>
     <div style="margin-top:14px"><button class="btn btn-primary" onclick="addVehicle()">+ Add vehicle</button></div>
@@ -251,37 +277,33 @@ tr:last-child td{border-bottom:none}
     <tbody id="fleet-tbody"></tbody></table>
   </div>
 </div>
-
 </div>
+
 <script>
 const SUPA_URL='https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
-
 const SLOTS=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
-let jobs=[],stock=[],motData={},vehicles=[],weekOffset=0;
+let jobs=[],stock=[],motData={},vehicles=[],weekOffset=0,modalJobId=null;
 
 function setSyncStatus(ok,msg){const el=document.getElementById('sync-status');el.textContent=msg;el.className='ws-sync '+(ok?'ok':'err');}
-
-async function loadVehicles(){
-  const{data}=await sb.from('vehicles').select('*').order('reg');
-  vehicles=data||[];
-  populateVehicleDropdown();
-}
-async function loadJobs(){
-  const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});
-  if(error){setSyncStatus(false,'DB error');return;}
-  jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();
-}
+async function loadVehicles(){const{data}=await sb.from('vehicles').select('*').order('reg');vehicles=data||[];populateVehicleDropdown();}
+async function loadJobs(){const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});if(error){setSyncStatus(false,'DB error');return;}jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();}
 async function loadStock(){const{data}=await sb.from('stock').select('*').order('id');stock=data||[];renderStock();}
 async function loadMOT(){const{data}=await sb.from('mot_data').select('*');motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();}
 
 function populateVehicleDropdown(){
   const sel=document.getElementById('job-vrn');
   sel.innerHTML='<option value="">Select vehicle...</option>';
-  vehicles.filter(v=>v.active).forEach(v=>{
-    sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));
-  });
+  vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
+}
+
+function checkNotesRequired(){
+  const type=document.getElementById('job-type').value;
+  const req=document.getElementById('notes-required');
+  const notes=document.getElementById('job-notes');
+  if(type==='Other'){req.style.display='inline';notes.placeholder='Required — describe the job...';}
+  else{req.style.display='none';notes.placeholder='Optional...';}
 }
 
 function fmt(d){return d.toISOString().split('T')[0];}
@@ -313,7 +335,8 @@ function renderSchedule(){
       dayJobs.forEach(j=>{
         const h=parseInt(j.hours)||1,hpx=(h*48)-4;
         const cc=j.assigned==='Peter'?'job-peter':j.assigned==='Dawid'?'job-dawid':'job-other';
-        ev+=`<div class="job-event ${cc}" style="height:${hpx}px" onclick="event.stopPropagation();removeJobConfirm('${j.id}')" title="${j.reg} \u2014 ${j.type} (${h}h)">${j.reg}<br>${j.type}<br><span style="opacity:0.8;font-weight:400">${h}h</span></div>`;
+        const notesLine=j.notes?`<div style="opacity:0.8;font-weight:400;font-size:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${j.notes}</div>`:'';
+        ev+=`<div class="job-event ${cc}" style="height:${hpx}px" onclick="event.stopPropagation();openModal('${j.id}')" title="${j.reg} \u2014 ${j.type} (${h}h)">${j.reg}<br>${j.type}<br><span style="opacity:0.8;font-weight:400">${h}h \u2022 ${j.assigned}</span>${notesLine}</div>`;
       });
       html+=`<div class="cal-cell${isT?' today':''}" onclick="prefillDate('${ds}','${slot}')">${ev}</div>`;
     });
@@ -324,9 +347,46 @@ function renderSchedule(){
   document.getElementById('m-week').textContent=wj.length+' job'+(wj.length!==1?'s':'');
   document.getElementById('m-ramp').innerHTML=tj.length>0?`<span style="color:#856404">Busy (${tj.length})</span>`:`<span style="color:#0a5236">Free</span>`;
   document.getElementById('m-pending').textContent=jobs.filter(j=>j.status==='pending').length;
-  const dj=wj.filter(j=>j.assigned==='Dawid');
-  document.getElementById('dawid-jobs').innerHTML=dj.length?dj.map(j=>`<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;background:#3d3a37;color:#e8a020;border-radius:20px;font-size:11px;font-weight:700">${j.date.slice(5)} \u2014 ${j.slot} \u2014 ${j.reg} (${j.hours||1}h)</span>`).join(''):'<span style="color:#555">No jobs this week</span>';
+  // Show all jobs this week for all assignees
+  document.getElementById('dawid-jobs').innerHTML=wj.length?wj.map(j=>{
+    const cc=j.assigned==='Peter'?'#e8a020':j.assigned==='Dawid'?'#3b82f6':'#8b5cf6';
+    const tc=j.assigned==='Peter'?'#1e1c1b':'#fff';
+    return`<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 10px;background:${cc};color:${tc};border-radius:20px;font-size:11px;font-weight:700">${j.date.slice(5)} \u2014 ${j.slot} \u2014 ${j.reg} (${j.hours||1}h) \u2014 ${j.assigned}</span>`;
+  }).join(''):'<span style="color:#555">No jobs this week</span>';
   renderJobsTable();
+}
+
+function openModal(id){
+  const j=jobs.find(j=>j.id===id);if(!j)return;
+  modalJobId=id;
+  const v=vehicles.find(v=>v.reg===j.reg)||{make:'?',model:'?'};
+  document.getElementById('modal-title').textContent=`${j.reg} \u2014 ${j.type}`;
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-row"><span class="modal-label">Date</span><span>${j.date}</span></div>
+    <div class="modal-row"><span class="modal-label">Time</span><span>${j.slot} (${j.hours||1}h)</span></div>
+    <div class="modal-row"><span class="modal-label">Vehicle</span><span>${v.make} ${v.model}</span></div>
+    <div class="modal-row"><span class="modal-label">Assigned</span><span>${j.assigned||'—'}</span></div>
+    <div class="modal-row"><span class="modal-label">Status</span><span><span class="badge badge-${j.status}">${j.status}</span></span></div>
+    ${j.notes?`<div class="modal-row"><span class="modal-label">Notes</span><span>${j.notes}</span></div>`:''}
+  `;
+  document.getElementById('modal-start-btn').style.display=j.status==='pending'?'block':'none';
+  document.getElementById('modal-done-btn').style.display=j.status==='inprogress'?'block':'none';
+  document.getElementById('job-modal').classList.add('open');
+}
+
+function closeModal(){document.getElementById('job-modal').classList.remove('open');modalJobId=null;}
+
+async function modalSetStatus(s){
+  if(!modalJobId)return;
+  await sb.from('jobs').update({status:s}).eq('id',modalJobId);
+  closeModal();loadJobs();
+}
+
+async function modalDelete(){
+  if(!modalJobId)return;
+  if(!confirm('Delete this job?'))return;
+  await sb.from('jobs').delete().eq('id',modalJobId);
+  closeModal();loadJobs();
 }
 
 function renderJobsTable(){
@@ -334,7 +394,8 @@ function renderJobsTable(){
   const veh=r=>vehicles.find(v=>v.reg===r)||{make:'?'};
   document.getElementById('jobs-tbody').innerHTML=sorted.length?sorted.map(j=>`<tr>
     <td style="font-size:12px;color:#8a8278">${j.date}</td><td>${j.slot||'09:00'}</td><td>${j.hours||1}h</td>
-    <td style="font-weight:600">${j.reg}</td><td style="color:#8a8278">${veh(j.reg).make}</td>
+    <td style="font-weight:600;cursor:pointer;color:#2563eb" onclick="openModal('${j.id}')">${j.reg}</td>
+    <td style="color:#8a8278">${veh(j.reg).make}</td>
     <td>${j.type}</td><td>${j.assigned||'\u2014'}</td>
     <td><span class="badge badge-${j.status}">${j.status}</span></td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">
@@ -345,17 +406,21 @@ function renderJobsTable(){
 }
 
 function prefillDate(date,slot){document.getElementById('job-date').value=date;document.getElementById('job-start').value=slot;}
+
 async function addJob(){
   const reg=document.getElementById('job-vrn').value,date=document.getElementById('job-date').value;
+  const type=document.getElementById('job-type').value;
+  const notes=document.getElementById('job-notes').value.trim();
   if(!reg||!date){alert('Select vehicle and date.');return;}
-  const job={id:Date.now().toString(),reg,date,slot:document.getElementById('job-start').value,hours:parseInt(document.getElementById('job-hours').value)||1,type:document.getElementById('job-type').value,assigned:document.getElementById('job-assigned').value,notes:document.getElementById('job-notes').value,status:'pending'};
+  if(type==='Other'&&!notes){alert('Please add notes to describe the job when selecting "Other".');document.getElementById('job-notes').focus();return;}
+  const job={id:Date.now().toString(),reg,date,slot:document.getElementById('job-start').value,hours:parseInt(document.getElementById('job-hours').value)||1,type,assigned:document.getElementById('job-assigned').value,notes,status:'pending'};
   const{error}=await sb.from('jobs').insert([job]);
   if(error){alert('Error: '+error.message);return;}
   document.getElementById('job-notes').value='';loadJobs();
 }
+
 async function setStatus(id,s){await sb.from('jobs').update({status:s}).eq('id',id);loadJobs();}
-async function removeJob(id){await sb.from('jobs').delete().eq('id',id);loadJobs();}
-function removeJobConfirm(id){if(confirm('Remove this job?')){removeJob(id);}}
+async function removeJob(id){if(confirm('Delete this job?')){await sb.from('jobs').delete().eq('id',id);loadJobs();}}
 function prevWeek(){weekOffset--;loadJobs();}
 function nextWeek(){weekOffset++;loadJobs();}
 function goToday(){weekOffset=0;loadJobs();}
@@ -393,24 +458,17 @@ async function dvsa(reg){
   const latest=(data[0].motTests||[])[0];
   return latest?{expiry:latest.expiryDate,result:latest.testResult,mileage:latest.odometerValue,make:data[0].make,model:data[0].model}:null;
 }
-async function setMOT(reg,val){
-  await sb.from('mot_data').upsert({reg,expiry:val,updated_at:new Date().toISOString()});
-  motData[reg]=val;
-}
+async function setMOT(reg,val){await sb.from('mot_data').upsert({reg,expiry:val,updated_at:new Date().toISOString()});motData[reg]=val;}
 async function lookupMOT(){
   const reg=document.getElementById('mot-lookup').value.trim().toUpperCase().replace(/\s/g,'');
   if(!reg){alert('Enter a registration.');return;}
-  const el=document.getElementById('mot-result');
-  el.innerHTML='<span style="color:#8a8278">Checking DVSA...</span>';
+  const el=document.getElementById('mot-result');el.innerHTML='<span style="color:#8a8278">Checking DVSA...</span>';
   const result=await dvsa(reg);
   if(!result){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">No records found.</div>';return;}
   await setMOT(reg,result.expiry);
   const d=new Date(result.expiry),diff=Math.ceil((d-new Date())/864e5);
   const col=diff<0?'#dc2626':diff<=60?'#856404':'#0a5236';
-  el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px">
-    <p style="font-weight:700;margin-bottom:6px">${result.make||''} ${result.model||''} \u2014 ${reg}</p>
-    <p>MOT expires: <span style="color:${col};font-weight:600">${result.expiry} (${diff<0?'expired':diff+'d'})</span></p>
-  </div>`;
+  el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px"><p style="font-weight:700;margin-bottom:6px">${result.make||''} ${result.model||''} \u2014 ${reg}</p><p>MOT expires: <span style="color:${col};font-weight:600">${result.expiry} (${diff<0?'expired':diff+'d'})</span></p></div>`;
   renderMOT();
 }
 async function checkAllFleet(){
@@ -425,11 +483,10 @@ async function checkAllFleet(){
     statusEl.textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
     fillEl.style.width=((done/active.length)*100)+'%';
     try{const result=await dvsa(v.reg);if(result){await setMOT(v.reg,result.expiry);found++;}else{notFound++;}}catch(e){notFound++;}
-    done++;
-    await new Promise(r=>setTimeout(r,300));
+    done++;await new Promise(r=>setTimeout(r,300));
   }
   fillEl.style.width='100%';
-  statusEl.textContent=`Done! ${found} vehicles updated, ${notFound} not found.`;
+  statusEl.textContent=`Done! ${found} updated, ${notFound} not found.`;
   btn.disabled=false;btn.textContent='&#128197; Check all fleet';
   renderMOT();
 }
@@ -439,34 +496,23 @@ function renderMOT(){
   document.getElementById('mot-tbody').innerHTML=active.map(v=>{
     const exp=motData[v.reg];
     let s='<span style="color:#8a8278;font-size:11px">Not checked</span>';
-    if(exp){const d=new Date(exp),diff=Math.ceil((d-today)/864e5);s=diff<0?'<span class="mot-due">&#9888; Expired</span>':diff<=30?`<span class="mot-due">&#9888; ${diff}d left</span>`:diff<=60?`<span class="mot-warn">&#9888; ${diff}d left</span>`:`<span class="mot-ok">&#10003; ${diff}d left</span>`;}
+    if(exp){const d=new Date(exp),diff=Math.ceil((d-today)/864e5);s=diff<0?'<span class="mot-due">&#9888; Expired</span>':diff<=30?`<span class="mot-due">&#9888; ${diff}d</span>`:diff<=60?`<span class="mot-warn">&#9888; ${diff}d</span>`:`<span class="mot-ok">&#10003; ${diff}d</span>`;}
     const ownerBadge=v.owner?`<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>`:'—';
     return`<tr><td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
-    <td>${ownerBadge}</td>
-    <td style="color:#8a8278;font-size:12px">${exp||'\u2014'}</td><td>${s}</td>
+    <td>${ownerBadge}</td><td style="color:#8a8278;font-size:12px">${exp||'\u2014'}</td><td>${s}</td>
     <td><button class="btn btn-sm" onclick="singleDVSA('${v.reg}',this)">&#8635;</button></td></tr>`;
   }).join('');
 }
-async function singleDVSA(reg,btn){
-  btn.textContent='...';btn.disabled=true;
-  const result=await dvsa(reg);
-  if(result){await setMOT(reg,result.expiry);}
-  btn.textContent='\u21bb';btn.disabled=false;
-  renderMOT();
-}
+async function singleDVSA(reg,btn){btn.textContent='...';btn.disabled=true;const result=await dvsa(reg);if(result){await setMOT(reg,result.expiry);}btn.textContent='\u21bb';btn.disabled=false;renderMOT();}
 
 function renderFleet(){
-  const active=vehicles.filter(v=>v.active);
-  const inactive=vehicles.filter(v=>!v.active);
   document.getElementById('f-total').textContent=vehicles.length;
-  document.getElementById('f-active').textContent=active.length;
-  document.getElementById('f-inactive').textContent=inactive.length;
+  document.getElementById('f-active').textContent=vehicles.filter(v=>v.active).length;
+  document.getElementById('f-inactive').textContent=vehicles.filter(v=>!v.active).length;
   document.getElementById('fleet-tbody').innerHTML=vehicles.length?vehicles.map(v=>{
     const ownerBadge=v.owner?`<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>`:'—';
     return`<tr class="${v.active?'':'inactive-row'}">
-      <td style="font-weight:700">${v.reg}</td>
-      <td>${v.make}</td>
-      <td style="color:#8a8278">${v.model}</td>
+      <td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
       <td>${ownerBadge}</td>
       <td><span class="badge ${v.active?'badge-done':'badge-pending'}">${v.active?'Active':'Inactive'}</span></td>
       <td style="display:flex;gap:4px">
@@ -475,7 +521,6 @@ function renderFleet(){
       </td></tr>`;
   }).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px;color:#8a8278">No vehicles</td></tr>';
 }
-
 async function addVehicle(){
   const reg=document.getElementById('v-reg').value.trim().toUpperCase();
   const make=document.getElementById('v-make').value.trim();
@@ -486,22 +531,12 @@ async function addVehicle(){
   ['v-reg','v-make','v-model'].forEach(id=>document.getElementById(id).value='');
   await loadVehicles();renderFleet();
 }
-
-async function toggleVehicle(id,active){
-  await sb.from('vehicles').update({active:!active}).eq('id',id);
-  await loadVehicles();renderFleet();
-}
-
-async function deleteVehicle(id){
-  if(!confirm('Permanently delete this vehicle?'))return;
-  await sb.from('vehicles').delete().eq('id',id);
-  await loadVehicles();renderFleet();
-}
+async function toggleVehicle(id,active){await sb.from('vehicles').update({active:!active}).eq('id',id);await loadVehicles();renderFleet();}
+async function deleteVehicle(id){if(!confirm('Permanently delete?'))return;await sb.from('vehicles').delete().eq('id',id);await loadVehicles();renderFleet();}
 
 setSyncStatus(false,'Connecting...');
 loadVehicles().then(()=>loadJobs());
 loadStock();loadMOT();
-
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
   .on('postgres_changes',{event:'*',schema:'public',table:'stock'},()=>loadStock())
