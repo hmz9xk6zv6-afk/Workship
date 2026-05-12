@@ -54,9 +54,6 @@ tr:last-child td{border-bottom:none}
 .mot-due{color:#dc2626;font-weight:600}
 .stock-low{color:#856404;font-weight:600}
 .stock-out{color:#dc2626;font-weight:600}
-.loading{text-align:center;padding:20px;color:#8a8278;font-size:12px}
-
-/* CALENDAR */
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-grid{display:grid;grid-template-columns:60px repeat(7,1fr);border-left:0.5px solid rgba(0,0,0,0.1);border-top:0.5px solid rgba(0,0,0,0.1)}
 .cal-head{background:#f5f0e8;padding:6px 4px;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase;color:#8a8278;border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1)}
@@ -69,11 +66,12 @@ tr:last-child td{border-bottom:none}
 .job-peter{background:#e8a020;color:#1e1c1b}
 .job-dawid{background:#3b82f6;color:#fff}
 .job-other{background:#8b5cf6;color:#fff}
+.progress-bar{height:4px;background:#e5e7eb;border-radius:2px;margin-top:8px;overflow:hidden}
+.progress-fill{height:100%;background:var(--ws-accent);border-radius:2px;transition:width 0.3s}
 </style>
 </head>
 <body>
 <div class="app">
-
 <div class="ws-header">
   <div>
     <div class="ws-logo-text">WORK<span>SHIP</span></div>
@@ -109,9 +107,7 @@ tr:last-child td{border-bottom:none}
         <button class="btn btn-sm" onclick="nextWeek()">&#8594;</button>
       </div>
     </div>
-    <div style="overflow-x:auto">
-      <div id="cal-grid" class="cal-grid" style="min-width:700px"></div>
-    </div>
+    <div style="overflow-x:auto"><div id="cal-grid" class="cal-grid" style="min-width:700px"></div></div>
   </div>
   <div class="ws-card">
     <p class="ws-section-label">Add new job</p>
@@ -194,21 +190,34 @@ tr:last-child td{border-bottom:none}
 <!-- MOT -->
 <div id="tab-mot" class="tab">
   <div class="ws-card">
-    <p class="ws-section-label">DVSA live check</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <p class="ws-section-label" style="margin-bottom:4px">Check all fleet via DVSA</p>
+        <p style="font-size:12px;color:#8a8278">Automatically checks every vehicle and saves MOT dates.</p>
+      </div>
+      <button class="btn btn-primary" id="check-all-btn" onclick="checkAllFleet()">&#128197; Check all fleet</button>
+    </div>
+    <div id="check-all-progress" style="display:none;margin-top:12px">
+      <div style="font-size:12px;color:#8a8278;margin-bottom:6px" id="check-all-status"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="ws-card">
+    <p class="ws-section-label">Manual check</p>
     <div style="display:flex;gap:8px;align-items:flex-end">
       <div style="flex:1"><label>Registration</label><input type="text" id="mot-lookup" placeholder="e.g. HK71JXW" style="text-transform:uppercase"></div>
-      <button class="btn btn-primary" onclick="lookupMOT()">Check DVSA</button>
+      <button class="btn btn-primary" onclick="lookupMOT()">Check</button>
     </div>
     <div id="mot-result" style="margin-top:12px;font-size:13px"></div>
   </div>
   <div class="ws-card">
     <p class="ws-section-label">Fleet MOT overview</p>
-    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Driver</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
+    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
     <tbody id="mot-tbody"></tbody></table>
   </div>
 </div>
-
 </div>
+
 <script>
 const SUPA_URL='https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
@@ -272,46 +281,31 @@ function showTab(t,btn){
 function renderSchedule(){
   const days=getWeekDates(weekOffset),today=fmt(new Date());
   document.getElementById('week-label').textContent=fmtDisp(days[0])+' \u2014 '+fmtDisp(days[6])+' '+days[0].getFullYear();
-
-  const CELL_H=48;
   const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-
-  // Build grid using absolute positioning inside a relative container
-  let html='';
-  // Header row
-  html+='<div class="cal-head"></div>';
-  days.forEach((d,i)=>{
-    const isT=fmt(d)===today;
-    html+=`<div class="cal-head${isT?' today':''}">${dayNames[i]}<br><span style="font-weight:400;font-size:12px">${d.getDate()}</span></div>`;
-  });
-
-  // Time rows
-  SLOTS.forEach((slot,si)=>{
+  let html='<div class="cal-head"></div>';
+  days.forEach((d,i)=>{const isT=fmt(d)===today;html+=`<div class="cal-head${isT?' today':''}">${dayNames[i]}<br><span style="font-weight:400;font-size:12px">${d.getDate()}</span></div>`;});
+  SLOTS.forEach(slot=>{
     html+=`<div class="cal-time">${slot}</div>`;
-    days.forEach((d,di)=>{
+    days.forEach(d=>{
       const ds=fmt(d),isT=ds===today;
-      // Find jobs that START at this slot for this day
       const dayJobs=jobs.filter(j=>j.date===ds&&j.slot===slot);
-      let eventsHtml='';
+      let ev='';
       dayJobs.forEach(j=>{
-        const hours=parseInt(j.hours)||1;
-        const heightPx=(hours*CELL_H)-4;
-        const colorClass=j.assigned==='Peter'?'job-peter':j.assigned==='Dawid'?'job-dawid':'job-other';
-        eventsHtml+=`<div class="job-event ${colorClass}" style="height:${heightPx}px;z-index:3" onclick="event.stopPropagation();removeJobConfirm('${j.id}')" title="${j.reg} \u2014 ${j.type} (${hours}h \u2022 ${j.assigned})">${j.reg}<br>${j.type}<br><span style="opacity:0.8;font-weight:400">${hours}h</span></div>`;
+        const h=parseInt(j.hours)||1,hpx=(h*48)-4;
+        const cc=j.assigned==='Peter'?'job-peter':j.assigned==='Dawid'?'job-dawid':'job-other';
+        ev+=`<div class="job-event ${cc}" style="height:${hpx}px" onclick="event.stopPropagation();removeJobConfirm('${j.id}')" title="${j.reg} \u2014 ${j.type} (${h}h)">${j.reg}<br>${j.type}<br><span style="opacity:0.8;font-weight:400">${h}h</span></div>`;
       });
-      html+=`<div class="cal-cell${isT?' today':''}" onclick="prefillDate('${ds}','${slot}')">${eventsHtml}</div>`;
+      html+=`<div class="cal-cell${isT?' today':''}" onclick="prefillDate('${ds}','${slot}')">${ev}</div>`;
     });
   });
-
   document.getElementById('cal-grid').innerHTML=html;
-
-  const thisWeekJobs=jobs.filter(j=>days.some(d=>fmt(d)===j.date));
-  const todayJobs=jobs.filter(j=>j.date===today);
-  document.getElementById('m-week').textContent=thisWeekJobs.length+' job'+(thisWeekJobs.length!==1?'s':'');
-  document.getElementById('m-ramp').innerHTML=todayJobs.length>0?`<span style="color:#856404">Busy (${todayJobs.length})</span>`:`<span style="color:#0a5236">Free</span>`;
+  const wj=jobs.filter(j=>getWeekDates(weekOffset).some(d=>fmt(d)===j.date));
+  const tj=jobs.filter(j=>j.date===today);
+  document.getElementById('m-week').textContent=wj.length+' job'+(wj.length!==1?'s':'');
+  document.getElementById('m-ramp').innerHTML=tj.length>0?`<span style="color:#856404">Busy (${tj.length})</span>`:`<span style="color:#0a5236">Free</span>`;
   document.getElementById('m-pending').textContent=jobs.filter(j=>j.status==='pending').length;
-  const dawidJobs=thisWeekJobs.filter(j=>j.assigned==='Dawid');
-  document.getElementById('dawid-jobs').innerHTML=dawidJobs.length?dawidJobs.map(j=>`<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;background:#3d3a37;color:#e8a020;border-radius:20px;font-size:11px;font-weight:700">${j.date.slice(5)} \u2014 ${j.slot} \u2014 ${j.reg} (${j.hours||1}h)</span>`).join(''):'<span style="color:#555">No jobs this week</span>';
+  const dj=wj.filter(j=>j.assigned==='Dawid');
+  document.getElementById('dawid-jobs').innerHTML=dj.length?dj.map(j=>`<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;background:#3d3a37;color:#e8a020;border-radius:20px;font-size:11px;font-weight:700">${j.date.slice(5)} \u2014 ${j.slot} \u2014 ${j.reg} (${j.hours||1}h)</span>`).join(''):'<span style="color:#555">No jobs this week</span>';
   renderJobsTable();
 }
 
@@ -319,8 +313,7 @@ function renderJobsTable(){
   const sorted=[...jobs].sort((a,b)=>b.date.localeCompare(a.date));
   const veh=r=>VEHICLES.find(v=>v.reg===r)||{make:'?'};
   document.getElementById('jobs-tbody').innerHTML=sorted.length?sorted.map(j=>`<tr>
-    <td style="font-size:12px;color:#8a8278">${j.date}</td>
-    <td>${j.slot||'09:00'}</td><td>${j.hours||1}h</td>
+    <td style="font-size:12px;color:#8a8278">${j.date}</td><td>${j.slot||'09:00'}</td><td>${j.hours||1}h</td>
     <td style="font-weight:600">${j.reg}</td><td style="color:#8a8278">${veh(j.reg).make}</td>
     <td>${j.type}</td><td>${j.assigned||'\u2014'}</td>
     <td><span class="badge badge-${j.status}">${j.status}</span></td>
@@ -332,7 +325,6 @@ function renderJobsTable(){
 }
 
 function prefillDate(date,slot){document.getElementById('job-date').value=date;document.getElementById('job-start').value=slot;}
-
 async function addJob(){
   const reg=document.getElementById('job-vrn').value,date=document.getElementById('job-date').value;
   if(!reg||!date){alert('Select vehicle and date.');return;}
@@ -341,7 +333,6 @@ async function addJob(){
   if(error){alert('Error: '+error.message);return;}
   document.getElementById('job-notes').value='';loadJobs();
 }
-
 async function setStatus(id,s){await sb.from('jobs').update({status:s}).eq('id',id);loadJobs();}
 async function removeJob(id){await sb.from('jobs').delete().eq('id',id);loadJobs();}
 function removeJobConfirm(id){if(confirm('Remove this job?')){removeJob(id);}}
@@ -362,7 +353,6 @@ function renderStock(){
     <button class="btn btn-sm btn-danger" onclick="removePart(${s.id})">\u2715</button></td></tr>`;
   }).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a8278">No parts</td></tr>';
 }
-
 async function addPart(){
   const name=document.getElementById('part-name').value.trim();if(!name){alert('Enter part name.');return;}
   const qty=parseInt(document.getElementById('part-qty').value)||1;
@@ -375,32 +365,82 @@ async function addPart(){
 async function usePart(id){const s=stock.find(s=>s.id===id);if(s&&s.qty>0){await sb.from('stock').update({qty:s.qty-1,used:(s.used||0)+1}).eq('id',id);loadStock();}}
 async function removePart(id){if(confirm('Remove?')){await sb.from('stock').delete().eq('id',id);loadStock();}}
 
+async function dvsa(reg){
+  const r=await fetch(`/api/mot?reg=${reg.toUpperCase().replace(/\s/g,'')}`);
+  if(!r.ok)return null;
+  const data=await r.json();
+  if(!data||!data.length)return null;
+  const latest=(data[0].motTests||[])[0];
+  return latest?{expiry:latest.expiryDate,result:latest.testResult,mileage:latest.odometerValue,make:data[0].make,model:data[0].model}:null;
+}
+
+async function setMOT(reg,val){
+  await sb.from('mot_data').upsert({reg,expiry:val,updated_at:new Date().toISOString()});
+  motData[reg]=val;
+}
+
+async function lookupMOT(){
+  const reg=document.getElementById('mot-lookup').value.trim().toUpperCase().replace(/\s/g,'');
+  if(!reg){alert('Enter a registration.');return;}
+  const el=document.getElementById('mot-result');
+  el.innerHTML='<span style="color:#8a8278">Checking DVSA...</span>';
+  const result=await dvsa(reg);
+  if(!result){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">No records found or DVSA error.</div>';return;}
+  await setMOT(reg,result.expiry);
+  const d=new Date(result.expiry),diff=Math.ceil((d-new Date())/864e5);
+  const col=diff<0?'#dc2626':diff<=60?'#856404':'#0a5236';
+  el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px">
+    <p style="font-weight:700;margin-bottom:6px">${result.make||''} ${result.model||''} \u2014 ${reg}</p>
+    <p>MOT expires: <span style="color:${col};font-weight:600">${result.expiry} (${diff<0?'expired':diff+'d remaining'})</span></p>
+    <p style="color:#8a8278;font-size:11px;margin-top:4px">Last result: ${result.result} \u00b7 Mileage: ${result.mileage||'?'}</p>
+  </div>`;
+  renderMOT();
+}
+
+async function checkAllFleet(){
+  const btn=document.getElementById('check-all-btn');
+  const prog=document.getElementById('check-all-progress');
+  const statusEl=document.getElementById('check-all-status');
+  const fillEl=document.getElementById('progress-fill');
+  btn.disabled=true;btn.textContent='Checking...';
+  prog.style.display='block';
+  let done=0,found=0,notFound=0;
+  const total=VEHICLES.length;
+  for(const v of VEHICLES){
+    statusEl.textContent=`Checking ${v.reg} (${done+1}/${total})...`;
+    fillEl.style.width=((done/total)*100)+'%';
+    try{
+      const result=await dvsa(v.reg);
+      if(result){await setMOT(v.reg,result.expiry);found++;}
+      else{notFound++;}
+    }catch(e){notFound++;}
+    done++;
+    await new Promise(r=>setTimeout(r,300));
+  }
+  fillEl.style.width='100%';
+  statusEl.textContent=`Done! ${found} vehicles updated, ${notFound} not found.`;
+  btn.disabled=false;btn.textContent='&#128197; Check all fleet';
+  renderMOT();
+}
+
 function renderMOT(){
   const today=new Date();
   document.getElementById('mot-tbody').innerHTML=VEHICLES.map(v=>{
     const exp=motData[v.reg];
-    let s='<span style="color:#8a8278;font-size:11px">Not set</span>';
-    if(exp){const d=new Date(exp),diff=Math.ceil((d-today)/864e5);s=diff<0?'<span class="mot-due">Expired</span>':diff<=30?`<span class="mot-due">${diff}d</span>`:diff<=60?`<span class="mot-warn">${diff}d</span>`:`<span class="mot-ok">${diff}d</span>`;}
+    let s='<span style="color:#8a8278;font-size:11px">Not checked</span>';
+    if(exp){const d=new Date(exp),diff=Math.ceil((d-today)/864e5);s=diff<0?'<span class="mot-due">&#9888; Expired</span>':diff<=30?`<span class="mot-due">&#9888; ${diff}d left</span>`:diff<=60?`<span class="mot-warn">&#9888; ${diff}d left</span>`:`<span class="mot-ok">&#10003; ${diff}d left</span>`;}
     return`<tr><td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
-    <td><input type="date" value="${exp||''}" style="width:130px;font-size:11px;padding:4px" onchange="setMOT('${v.reg}',this.value)"></td>
-    <td>${s}</td><td><button class="btn btn-sm" onclick="quickDVSA('${v.reg}')">&#8635;</button></td></tr>`;
+    <td style="color:#8a8278;font-size:12px">${exp||'\u2014'}</td><td>${s}</td>
+    <td><button class="btn btn-sm" onclick="singleDVSA('${v.reg}',this)">&#8635;</button></td></tr>`;
   }).join('');
 }
-async function setMOT(reg,val){await sb.from('mot_data').upsert({reg,expiry:val,updated_at:new Date().toISOString()});motData[reg]=val;renderMOT();}
-function quickDVSA(reg){document.getElementById('mot-lookup').value=reg;lookupMOT();}
-async function lookupMOT(){
-  const reg=document.getElementById('mot-lookup').value.trim().toUpperCase().replace(/\s/g,'');
-  if(!reg){alert('Enter a registration.');return;}
-  const el=document.getElementById('mot-result');el.innerHTML='<span style="color:#8a8278">Checking...</span>';
-  try{
-    const r=await fetch(`https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests?registration=${reg}`,{headers:{'Accept':'application/json+v6','x-api-key':'RuyVVTyKgo4pTfVYGms0u3wnubM4D2aH1LVbGnYK'}});
-    if(!r.ok){el.innerHTML=`<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">DVSA error \u2014 set dates manually.</div>`;return;}
-    const data=await r.json();const v=data[0],latest=(v.motTests||[])[0];
-    if(latest){const d=new Date(latest.expiryDate),diff=Math.ceil((d-new Date())/864e5);
-      await setMOT(reg,latest.expiryDate);
-      el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px"><p style="font-weight:700;margin-bottom:6px">${v.make||''} \u2014 ${reg}</p><p>Expires: <span style="color:${diff<0?'#dc2626':diff<=60?'#856404':'#0a5236'};font-weight:600">${latest.expiryDate} (${diff<0?'expired':diff+'d'})</span></p></div>`;
-    }
-  }catch(e){el.innerHTML=`<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">DVSA needs server setup.</div>`;}
+
+async function singleDVSA(reg,btn){
+  btn.textContent='...';btn.disabled=true;
+  const result=await dvsa(reg);
+  if(result){await setMOT(reg,result.expiry);}
+  btn.textContent='\u21bb';btn.disabled=false;
+  renderMOT();
 }
 
 const sel=document.getElementById('job-vrn');
