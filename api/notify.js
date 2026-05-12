@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: 'Workship <onboarding@resend.dev>', to: TO_EMAIL, subject, html })
+      body: JSON.stringify({ from: 'Workship <workship@notonlyvans.com>', to: TO_EMAIL, subject, html })
     });
 
     const emailData = await emailRes.json();
