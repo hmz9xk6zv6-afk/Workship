@@ -102,7 +102,7 @@ tr:last-child td{border-bottom:none}
       <button class="ws-nav-btn active" onclick="showTab('schedule',this)">&#128197; Schedule</button>
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
       <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
-      <button class="ws-nav-btn" onclick="showTab('expenses',this)">&#128200; Expenses</button>
+      <button class="ws-nav-btn" onclick="showTab('Service Log',this)">&#128200; Service Log</button>
     </div>
   </div>
 </div>
@@ -265,8 +265,8 @@ tr:last-child td{border-bottom:none}
     <tbody id="fleet-tbody"></tbody></table>
   </div>
 </div>
-<!-- EXPENSES TAB -->
-<div id="tab-expenses" class="tab">
+<!-- Service Log TAB -->
+<div id="tab-Service Log" class="tab">
   <div class="metrics-row">
     <div class="ws-metric"><div class="ws-metric-label">This month</div><div class="ws-metric-value" id="e-month">—</div></div>
     <div class="ws-metric"><div class="ws-metric-label">Not invoiced</div><div class="ws-metric-value" id="e-uninvoiced" style="color:#856404">—</div></div>
@@ -326,7 +326,7 @@ tr:last-child td{border-bottom:none}
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="ws-section-label" style="margin:0">Job records</p>
-      <select id="exp-filter-invoiced" onchange="loadExpenses()" style="width:auto;font-size:12px;padding:6px 10px">
+      <select id="exp-filter-invoiced" onchange="loadService Log()" style="width:auto;font-size:12px;padding:6px 10px">
         <option value="all">All records</option>
         <option value="false">Not invoiced</option>
         <option value="true">Invoiced</option>
@@ -334,7 +334,7 @@ tr:last-child td{border-bottom:none}
     </div>
     <table>
       <thead><tr><th>Date</th><th>Vehicle</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
-      <tbody id="expenses-tbody"></tbody>
+      <tbody id="Service Log-tbody"></tbody>
     </table>
   </div>
 
@@ -410,7 +410,7 @@ function showTab(t,btn){
   if(t==='schedule')loadJobs();
   if(t==='mot'){loadVehicles();loadMOT();}
   if(t==='fleet'){loadVehicles();renderFleet();}
-  if(t==='expenses'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
+  if(t==='Service Log'){loadService Log();loadPriceList();populateExpVehicleDropdown();}
 }
 
 function renderSchedule(){
@@ -614,17 +614,17 @@ async function addVehicle(){
 async function toggleVehicle(id,active){await sb.from('vehicles').update({active:!active}).eq('id',id);await loadVehicles();renderFleet();}
 async function deleteVehicle(id){if(!confirm('Permanently delete?'))return;await sb.from('vehicles').delete().eq('id',id);await loadVehicles();renderFleet();}
 
-// ============ EXPENSES ============
-let expenses=[], priceList=[], expLines=[], currentExpMake='', editingExpenseId=null;
+// ============ Service log ============
+let Service Log=[], priceList=[], expLines=[], currentExpMake='', editingExpenseId=null;
 
-async function loadExpenses(){
+async function loadService Log(){
   const filter=document.getElementById('exp-filter-invoiced')?.value||'all';
-  let query=sb.from('expenses').select('*, expense_lines(*)').order('job_date',{ascending:false});
+  let query=sb.from('Service Log').select('*, expense_lines(*)').order('job_date',{ascending:false});
   if(filter==='true') query=query.eq('invoiced',true);
   if(filter==='false') query=query.eq('invoiced',false);
   const{data}=await query;
-  expenses=data||[];
-  renderExpenses();
+  Service Log=data||[];
+  renderService Log();
 }
 
 async function loadPriceList(){
@@ -766,22 +766,22 @@ async function saveExpense(){
   if(expLines.some(l=>l.item==='Other'&&!l.other_desc)){alert('Please describe the "Other" item.');return;}
 
   if(editingExpenseId){
-    await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
+    await sb.from('Service Log').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
     await sb.from('expense_lines').delete().eq('expense_id',editingExpenseId);
     const lines=expLines.map(l=>({expense_id:editingExpenseId,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
   } else {
-    const{data:exp,error}=await sb.from('expenses').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
+    const{data:exp,error}=await sb.from('Service Log').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
     if(error){alert('Error: '+error.message);return;}
     const lines=expLines.map(l=>({expense_id:exp.id,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
   }
   resetExpenseForm();
-  loadExpenses();
+  loadService Log();
 }
 
 function editExpense(id){
-  const e=expenses.find(e=>e.id===id);
+  const e=Service Log.find(e=>e.id===id);
   if(!e) return;
   editingExpenseId=id;
   const sel=document.getElementById('exp-vrn');
@@ -797,21 +797,21 @@ function editExpense(id){
   renderExpLines();
   const btn=document.querySelector('[onclick="saveExpense()"]');
   if(btn) btn.textContent='Update job record';
-  document.getElementById('tab-expenses').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
+  document.getElementById('tab-Service Log').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
 
-function renderExpenses(){
+function renderService Log(){
   const today=new Date();
-  const thisMonth=expenses.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
+  const thisMonth=Service Log.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
   const monthTotal=thisMonth.reduce((a,e)=>{const t=(e.expense_lines||[]).reduce((s,l)=>s+(l.total||0),0);return a+t;},0);
-  const uninvoiced=expenses.filter(e=>!e.invoiced).length;
+  const uninvoiced=Service Log.filter(e=>!e.invoiced).length;
   const el1=document.getElementById('e-month');const el2=document.getElementById('e-uninvoiced');const el3=document.getElementById('e-total');
   if(el1) el1.textContent='\u00a3'+(monthTotal*1.2).toFixed(2);
   if(el2) el2.textContent=uninvoiced+' jobs';
-  if(el3) el3.textContent=expenses.length;
-  const tbody=document.getElementById('expenses-tbody');
+  if(el3) el3.textContent=Service Log.length;
+  const tbody=document.getElementById('Service Log-tbody');
   if(!tbody) return;
-  tbody.innerHTML=expenses.length?expenses.map(e=>{
+  tbody.innerHTML=Service Log.length?Service Log.map(e=>{
     const lines=e.expense_lines||[];
     const subtotal=lines.reduce((a,l)=>a+(l.total||0),0);
     const vat=subtotal*0.2;
@@ -833,8 +833,8 @@ function renderExpenses(){
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
 }
 
-async function markInvoiced(id){await sb.from('expenses').update({invoiced:true}).eq('id',id);loadExpenses();}
-async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('expenses').delete().eq('id',id);loadExpenses();}
+async function markInvoiced(id){await sb.from('Service Log').update({invoiced:true}).eq('id',id);loadService Log();}
+async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('Service Log').delete().eq('id',id);loadService Log();}
 
 function renderPriceList(){
   const tbody=document.getElementById('pricelist-tbody');
@@ -866,7 +866,7 @@ sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
   .on('postgres_changes',{event:'*',schema:'public',table:'mot_data'},()=>loadMOT())
   .on('postgres_changes',{event:'*',schema:'public',table:'vehicles'},()=>{loadVehicles();})
-  .on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>loadExpenses())
+  .on('postgres_changes',{event:'*',schema:'public',table:'Service Log'},()=>loadService Log())
   .subscribe();
 </script>
 </body>
