@@ -100,7 +100,6 @@ tr:last-child td{border-bottom:none}
     <span class="ws-sync" id="sync-status">Connecting...</span>
     <div class="ws-nav">
       <button class="ws-nav-btn active" onclick="showTab('schedule',this)">&#128197; Schedule</button>
-      <button class="ws-nav-btn" onclick="showTab('stock',this)">&#128230; Stock</button>
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
       <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
       <button class="ws-nav-btn" onclick="showTab('expenses',this)">&#128200; Expenses</button>
@@ -192,39 +191,6 @@ tr:last-child td{border-bottom:none}
     <p class="ws-section-label">All jobs</p>
     <table><thead><tr><th>Date</th><th>Start</th><th>Dur</th><th>Vehicle</th><th>Make</th><th>Type</th><th>Assigned</th><th>Status</th><th></th></tr></thead>
     <tbody id="jobs-tbody"></tbody></table>
-  </div>
-</div>
-
-<!-- STOCK -->
-<div id="tab-stock" class="tab">
-  <div class="metrics-row">
-    <div class="ws-metric"><div class="ws-metric-label">Total items</div><div class="ws-metric-value" id="s-total">—</div></div>
-    <div class="ws-metric"><div class="ws-metric-label">Low stock</div><div class="ws-metric-value" id="s-low" style="color:#856404">—</div></div>
-    <div class="ws-metric"><div class="ws-metric-label">Out of stock</div><div class="ws-metric-value" id="s-out" style="color:#dc2626">—</div></div>
-  </div>
-  <div class="ws-card">
-    <p class="ws-section-label">Receive parts</p>
-    <div class="form-row">
-      <div><label>Part name</label><input type="text" id="part-name" placeholder="e.g. Oil filter Ford Transit"></div>
-      <div><label>Vehicle make</label>
-        <select id="part-make"><option value="">Any</option>
-          <option>Ford</option><option>Vauxhall</option><option>Renault</option>
-          <option>Nissan</option><option>Mercedes</option><option>Mazda</option>
-          <option>BMW</option><option>Peugeot</option><option>Volvo</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div><label>Qty received</label><input type="number" id="part-qty" value="1" min="1"></div>
-      <div><label>Unit cost (£)</label><input type="number" id="part-cost" value="0" step="0.01" min="0"></div>
-    </div>
-    <div><label>Invoice reference</label><input type="text" id="part-ref" placeholder="Optional"></div>
-    <div style="margin-top:14px"><button class="btn btn-primary" onclick="addPart()">+ Add to stock</button></div>
-  </div>
-  <div class="ws-card">
-    <p class="ws-section-label">Current stock</p>
-    <table><thead><tr><th>Part</th><th>Make</th><th>In stock</th><th>Used</th><th>Unit cost</th><th>Total value</th><th></th></tr></thead>
-    <tbody id="stock-tbody"></tbody></table>
   </div>
 </div>
 
@@ -410,13 +376,13 @@ const SUPA_URL='https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 const SLOTS=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
-let jobs=[],stock=[],motData={},vehicles=[],weekOffset=0,modalJobId=null;
+let jobs=[],motData={},vehicles=[],weekOffset=0,modalJobId=null;
 
 function setSyncStatus(ok,msg){const el=document.getElementById('sync-status');el.textContent=msg;el.className='ws-sync '+(ok?'ok':'err');}
 async function loadVehicles(){const{data}=await sb.from('vehicles').select('*').order('reg');vehicles=data||[];populateVehicleDropdown();populateExpVehicleDropdown();}
 function populateExpVehicleDropdown(){const sel=document.getElementById('exp-vrn');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Select from fleet...</option><option value="__manual__">Other (type manually)</option>';vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} — ${v.make} ${v.model}`,v.reg));});if(cur)sel.value=cur;}
 async function loadJobs(){const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});if(error){setSyncStatus(false,'DB error');return;}jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();}
-async function loadStock(){const{data}=await sb.from('stock').select('*').order('id');stock=data||[];renderStock();}
+
 async function loadMOT(){const{data}=await sb.from('mot_data').select('*');motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();}
 
 function populateVehicleDropdown(){
@@ -442,7 +408,6 @@ function showTab(t,btn){
   document.querySelectorAll('.ws-nav-btn').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');btn.classList.add('active');
   if(t==='schedule')loadJobs();
-  if(t==='stock')loadStock();
   if(t==='mot'){loadVehicles();loadMOT();}
   if(t==='fleet'){loadVehicles();renderFleet();}
   if(t==='expenses'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
@@ -542,30 +507,7 @@ function prevWeek(){weekOffset--;loadJobs();}
 function nextWeek(){weekOffset++;loadJobs();}
 function goToday(){weekOffset=0;loadJobs();}
 
-function renderStock(){
-  document.getElementById('s-total').textContent=stock.length;
-  document.getElementById('s-low').textContent=stock.filter(s=>s.qty>0&&s.qty<=s.min).length;
-  document.getElementById('s-out').textContent=stock.filter(s=>s.qty<=0).length;
-  document.getElementById('stock-tbody').innerHTML=stock.length?stock.map(s=>{
-    const cls=s.qty<=0?'stock-out':s.qty<=s.min?'stock-low':'';
-    return`<tr><td style="font-weight:600">${s.name}</td><td style="color:#8a8278">${s.make||'\u2014'}</td>
-    <td class="${cls}">${s.qty}</td><td style="color:#8a8278">${s.used||0}</td>
-    <td>\u00a3${(s.cost||0).toFixed(2)}</td><td style="font-weight:600">\u00a3${((s.qty||0)*(s.cost||0)).toFixed(2)}</td>
-    <td style="display:flex;gap:4px"><button class="btn btn-sm" onclick="usePart(${s.id})">Use 1</button>
-    <button class="btn btn-sm btn-danger" onclick="removePart(${s.id})">\u2715</button></td></tr>`;
-  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a8278">No parts</td></tr>';
-}
-async function addPart(){
-  const name=document.getElementById('part-name').value.trim();if(!name){alert('Enter part name.');return;}
-  const qty=parseInt(document.getElementById('part-qty').value)||1;
-  const existing=stock.find(s=>s.name.toLowerCase()===name.toLowerCase());
-  if(existing){await sb.from('stock').update({qty:existing.qty+qty}).eq('id',existing.id);}
-  else{await sb.from('stock').insert([{name,make:document.getElementById('part-make').value,qty,used:0,cost:parseFloat(document.getElementById('part-cost').value)||0,ref:document.getElementById('part-ref').value,min:2}]);}
-  ['part-name','part-ref'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('part-qty').value='1';document.getElementById('part-cost').value='0';loadStock();
-}
-async function usePart(id){const s=stock.find(s=>s.id===id);if(s&&s.qty>0){await sb.from('stock').update({qty:s.qty-1,used:(s.used||0)+1}).eq('id',id);loadStock();}}
-async function removePart(id){if(confirm('Remove?')){await sb.from('stock').delete().eq('id',id);loadStock();}}
+
 
 async function dvsa(reg){
   const r=await fetch(`/api/mot?reg=${reg.toUpperCase().replace(/\s/g,'')}`);
@@ -919,11 +861,9 @@ async function savePriceItem(){
 async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
 
 setSyncStatus(false,'Connecting...');
-loadVehicles().then(()=>loadJobs());
-loadStock();loadMOT();
+loadVehicles().then(()=>loadJobs());loadMOT();
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
-  .on('postgres_changes',{event:'*',schema:'public',table:'stock'},()=>loadStock())
   .on('postgres_changes',{event:'*',schema:'public',table:'mot_data'},()=>loadMOT())
   .on('postgres_changes',{event:'*',schema:'public',table:'vehicles'},()=>{loadVehicles();})
   .on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>loadExpenses())
