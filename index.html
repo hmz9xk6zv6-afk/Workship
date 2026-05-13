@@ -307,7 +307,6 @@ tr:last-child td{border-bottom:none}
     <div class="ws-metric"><div class="ws-metric-label">Total jobs</div><div class="ws-metric-value" id="e-total">—</div></div>
   </div>
 
-  <!-- ADD NEW EXPENSE -->
   <div class="ws-card">
     <p class="ws-section-label">Log work — Dawid</p>
     <div class="form-row">
@@ -328,22 +327,27 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
     <div id="exp-make-display" style="display:none;margin-top:8px;font-size:12px;color:#8a8278;padding:6px 10px;background:#f5f0e8;border-radius:6px"></div>
-
-    <!-- LINE ITEMS -->
     <div style="margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <p class="ws-section-label" style="margin:0">Items / Work done</p>
         <button class="btn btn-sm btn-primary" onclick="addExpLine()">+ Add line</button>
       </div>
-      <div id="exp-lines">
-        <!-- lines added dynamically -->
-      </div>
-      <div style="margin-top:8px;padding:10px 12px;background:#f5f0e8;border-radius:8px;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:12px;color:#8a8278;font-weight:700;letter-spacing:1px;text-transform:uppercase">Total</span>
-        <span style="font-size:18px;font-weight:700" id="exp-total-display">£0.00</span>
+      <div id="exp-lines"></div>
+      <div style="margin-top:8px;padding:10px 12px;background:#f5f0e8;border-radius:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:#8a8278">Subtotal (ex VAT)</span>
+          <span style="font-size:13px;font-weight:600" id="exp-subtotal-display">£0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:#8a8278">VAT (20%)</span>
+          <span style="font-size:13px;font-weight:600" id="exp-vat-display">£0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:0.5px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:4px">
+          <span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Total inc VAT</span>
+          <span style="font-size:18px;font-weight:700" id="exp-total-display">£0.00</span>
+        </div>
       </div>
     </div>
-
     <div style="margin-top:8px">
       <label>Notes</label>
       <input type="text" id="exp-notes" placeholder="Optional...">
@@ -353,42 +357,30 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
-  <!-- EXPENSE LIST -->
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="ws-section-label" style="margin:0">Job records</p>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="exp-filter-invoiced" onchange="loadExpenses()" style="width:auto;font-size:12px;padding:6px 10px">
-          <option value="all">All records</option>
-          <option value="false">Not invoiced</option>
-          <option value="true">Invoiced</option>
-        </select>
-      </div>
+      <select id="exp-filter-invoiced" onchange="loadExpenses()" style="width:auto;font-size:12px;padding:6px 10px">
+        <option value="all">All records</option>
+        <option value="false">Not invoiced</option>
+        <option value="true">Invoiced</option>
+      </select>
     </div>
     <table>
-      <thead><tr><th>Date</th><th>Vehicle</th><th>Make</th><th>Items</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Date</th><th>Vehicle</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
       <tbody id="expenses-tbody"></tbody>
     </table>
   </div>
 
-  <!-- PRICE LIST -->
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="ws-section-label" style="margin:0">Price list — Peter only</p>
       <button class="btn btn-sm btn-primary" onclick="showAddPriceForm()">+ Add item</button>
     </div>
     <div id="add-price-form" style="display:none;background:#f5f0e8;border-radius:8px;padding:14px;margin-bottom:12px">
-      <div class="form-row4">
+      <div class="form-row3">
         <div><label>Item name</label><input type="text" id="pl-item" placeholder="e.g. Oil Filter"></div>
-        <div><label>Make</label>
-          <select id="pl-make">
-            <option value="All">All makes</option>
-            <option>Ford</option><option>Vauxhall</option><option>Renault</option>
-            <option>Nissan</option><option>Mercedes</option><option>Mazda</option>
-            <option>BMW</option><option>Peugeot</option><option>Volvo</option>
-          </select>
-        </div>
-        <div><label>Price (£)</label><input type="number" id="pl-price" value="0" step="0.01" min="0"></div>
+        <div><label>Price ex VAT (£)</label><input type="number" id="pl-price" value="0" step="0.01" min="0"></div>
         <div><label>Unit</label>
           <select id="pl-unit">
             <option value="unit">unit</option>
@@ -406,12 +398,11 @@ tr:last-child td{border-bottom:none}
       </div>
     </div>
     <table>
-      <thead><tr><th>Item</th><th>Make</th><th>Price</th><th>Unit</th><th></th></tr></thead>
+      <thead><tr><th>Item</th><th>Price ex VAT</th><th>Unit</th><th></th></tr></thead>
       <tbody id="pricelist-tbody"></tbody>
     </table>
   </div>
 </div>
-
 </div>
 
 <script>
@@ -682,7 +673,7 @@ async function toggleVehicle(id,active){await sb.from('vehicles').update({active
 async function deleteVehicle(id){if(!confirm('Permanently delete?'))return;await sb.from('vehicles').delete().eq('id',id);await loadVehicles();renderFleet();}
 
 // ============ EXPENSES ============
-let expenses=[], priceList=[], expLines=[], currentExpMake='';
+let expenses=[], priceList=[], expLines=[], currentExpMake='', editingExpenseId=null;
 
 async function loadExpenses(){
   const filter=document.getElementById('exp-filter-invoiced')?.value||'all';
@@ -695,7 +686,7 @@ async function loadExpenses(){
 }
 
 async function loadPriceList(){
-  const{data}=await sb.from('price_list').select('*').order('item').order('make');
+  const{data}=await sb.from('price_list').select('*').order('item');
   priceList=data||[];
   renderPriceList();
 }
@@ -703,22 +694,17 @@ async function loadPriceList(){
 function onExpVehicleChange(){
   const val=document.getElementById('exp-vrn').value;
   const manualWrap=document.getElementById('exp-manual-wrap');
-  const dateWrap=document.getElementById('exp-date-wrap');
   const makeDisplay=document.getElementById('exp-make-display');
-
   if(val==='__manual__'){
     manualWrap.style.display='block';
-    dateWrap.style.display='block';
     makeDisplay.style.display='none';
     currentExpMake='';
   } else if(val){
     manualWrap.style.display='none';
-    dateWrap.style.display='block';
     const v=vehicles.find(v=>v.reg===val);
     currentExpMake=v?v.make:'';
     makeDisplay.style.display='block';
-    makeDisplay.textContent=`Make: ${currentExpMake} — prices will be loaded for this make`;
-    updateExpLinePrices();
+    makeDisplay.textContent='Make: '+currentExpMake;
   } else {
     manualWrap.style.display='none';
     makeDisplay.style.display='none';
@@ -726,30 +712,12 @@ function onExpVehicleChange(){
   }
 }
 
-function getPrice(item, make){
-  // Try specific make first
-  let p=priceList.find(p=>p.item===item&&p.make===make);
-  if(!p) p=priceList.find(p=>p.item===item&&p.make==='All');
-  return p||null;
-}
-
-function updateExpLinePrices(){
-  expLines.forEach((line,i)=>{
-    if(!line.item) return;
-    const p=getPrice(line.item, currentExpMake);
-    if(p){
-      expLines[i].unit_price=p.unit_price;
-      expLines[i].unit=p.unit;
-      expLines[i].is_labour=p.is_labour;
-      if(p.unit==='fixed') expLines[i].quantity=1;
-    }
-    recalcLine(i);
-  });
-  renderExpLines();
+function getPrice(item){
+  return priceList.find(p=>p.item===item)||null;
 }
 
 function addExpLine(){
-  expLines.push({item:'',quantity:1,unit:'unit',hours:0,unit_price:0,total:0,is_labour:false});
+  expLines.push({item:'',other_desc:'',quantity:1,unit:'unit',hours:0,unit_price:0,total:0,is_labour:false});
   renderExpLines();
 }
 
@@ -760,35 +728,27 @@ function removeExpLine(i){
 
 function onLineItemChange(i, val){
   expLines[i].item=val;
-  const p=getPrice(val, currentExpMake);
-  if(p){
-    expLines[i].unit_price=p.unit_price;
-    expLines[i].unit=p.unit;
-    expLines[i].is_labour=p.is_labour||false;
-    if(p.unit==='fixed'){expLines[i].quantity=1;expLines[i].hours=0;}
-    if(p.is_labour){expLines[i].quantity=0;}
+  if(val==='Other'){
+    expLines[i].unit_price=0;
+    expLines[i].unit='unit';
+    expLines[i].is_labour=false;
+  } else {
+    const p=getPrice(val);
+    if(p){
+      expLines[i].unit_price=p.unit_price;
+      expLines[i].unit=p.unit;
+      expLines[i].is_labour=p.unit==='hour';
+      if(p.unit==='fixed'){expLines[i].quantity=1;expLines[i].hours=0;}
+    }
   }
   recalcLine(i);
   renderExpLines();
 }
 
-function onLineQtyChange(i, val){
-  expLines[i].quantity=parseFloat(val)||0;
-  recalcLine(i);
-  updateExpTotal();
-}
-
-function onLineHoursChange(i, val){
-  expLines[i].hours=parseFloat(val)||0;
-  recalcLine(i);
-  updateExpTotal();
-}
-
-function onLinePriceChange(i, val){
-  expLines[i].unit_price=parseFloat(val)||0;
-  recalcLine(i);
-  updateExpTotal();
-}
+function onLineOtherDescChange(i,val){expLines[i].other_desc=val;}
+function onLineQtyChange(i,val){expLines[i].quantity=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
+function onLineHoursChange(i,val){expLines[i].hours=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
+function onLinePriceChange(i,val){expLines[i].unit_price=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
 
 function recalcLine(i){
   const l=expLines[i];
@@ -799,221 +759,164 @@ function recalcLine(i){
 }
 
 function updateExpTotal(){
-  const total=expLines.reduce((a,l)=>a+(l.total||0),0);
-  const el=document.getElementById('exp-total-display');
-  if(el) el.textContent='\u00a3'+total.toFixed(2);
+  const subtotal=expLines.reduce((a,l)=>a+(l.total||0),0);
+  const vat=subtotal*0.2;
+  const total=subtotal+vat;
+  const s=document.getElementById('exp-subtotal-display');
+  const v=document.getElementById('exp-vat-display');
+  const t=document.getElementById('exp-total-display');
+  if(s) s.textContent='\u00a3'+subtotal.toFixed(2);
+  if(v) v.textContent='\u00a3'+vat.toFixed(2);
+  if(t) t.textContent='\u00a3'+total.toFixed(2);
 }
 
 function renderExpLines(){
   const COMMON_ITEMS=['Labour','Diagnostic','Engine Oil','Oil Filter','Air Filter','Fuel Filter','Cabin Filter',
     'Brake Pads Front','Brake Pads Rear','Brake Discs Front','Brake Discs Rear','Bulbs','Tyres','Other'];
-
   const container=document.getElementById('exp-lines');
   if(!container) return;
-
   if(expLines.length===0){
-    container.innerHTML=`<div style="text-align:center;padding:16px;color:#8a8278;font-size:12px;border:1px dashed rgba(0,0,0,0.15);border-radius:8px">Click "+ Add line" to add items</div>`;
-    updateExpTotal();
-    return;
+    container.innerHTML='<div style="text-align:center;padding:16px;color:#8a8278;font-size:12px;border:1px dashed rgba(0,0,0,0.15);border-radius:8px">Click "+ Add line" to add items</div>';
+    updateExpTotal();return;
   }
-
   container.innerHTML=expLines.map((l,i)=>{
     const isLabour=l.is_labour||l.unit==='hour';
     const isFixed=l.unit==='fixed';
-    const opts=COMMON_ITEMS.map(it=>`<option value="${it}" ${l.item===it?'selected':''}>${it}</option>`).join('');
-    return`<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;padding:8px;background:#f9f8f6;border-radius:8px">
-      <div>
-        <select style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px;background:#fff" onchange="onLineItemChange(${i},this.value)">
-          <option value="">Select item...</option>
-          ${opts}
-        </select>
-      </div>
-      <div>
-        ${isFixed?`<input type="number" value="1" disabled style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.1);border-radius:6px;font-size:12px;background:#eee;color:#8a8278">`
-        :isLabour?`<div style="display:flex;gap:4px;align-items:center"><input type="number" value="${l.hours||0}" min="0" step="0.5" style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineHoursChange(${i},this.value)" placeholder="hrs"><span style="font-size:10px;color:#8a8278;white-space:nowrap">hrs</span></div>`
-        :`<input type="number" value="${l.quantity||1}" min="0.5" step="0.5" style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineQtyChange(${i},this.value)" placeholder="qty">`}
-      </div>
-      <div>
-        <input type="number" value="${l.unit_price||0}" min="0" step="0.01" style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLinePriceChange(${i},this.value)" placeholder="£">
-      </div>
-      <div style="text-align:right;font-weight:700;font-size:13px">£${(l.total||0).toFixed(2)}</div>
-      <div><button class="btn btn-sm btn-danger" onclick="removeExpLine(${i})">&times;</button></div>
-    </div>`;
+    const isOther=l.item==='Other';
+    const opts=COMMON_ITEMS.map(it=>'<option value="'+it+'" '+(l.item===it?'selected':'')+'>'+it+'</option>').join('');
+    return '<div style="background:#f9f8f6;border-radius:8px;padding:8px;margin-bottom:8px">'
+      +'<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center">'
+      +'<select style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px;background:#fff" onchange="onLineItemChange('+i+',this.value)"><option value="">Select item...</option>'+opts+'</select>'
+      +(isFixed?'<input type="number" value="1" disabled style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.1);border-radius:6px;font-size:12px;background:#eee;color:#8a8278">'
+        :isLabour?'<div style="display:flex;gap:4px;align-items:center"><input type="number" value="'+(l.hours||0)+'" min="0" step="0.5" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineHoursChange('+i+',this.value)"><span style="font-size:10px;color:#8a8278;white-space:nowrap">hrs</span></div>'
+        :'<input type="number" value="'+(l.quantity||1)+'" min="0.5" step="0.5" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineQtyChange('+i+',this.value)">')
+      +'<input type="number" value="'+(l.unit_price||0)+'" min="0" step="0.01" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLinePriceChange('+i+',this.value)" placeholder="£ ex VAT">'
+      +'<div style="text-align:right;font-weight:700;font-size:13px">\u00a3'+(l.total||0).toFixed(2)+'</div>'
+      +'<button class="btn btn-sm btn-danger" onclick="removeExpLine('+i+')">&times;</button>'
+      +'</div>'
+      +(isOther?'<div style="margin-top:6px"><input type="text" placeholder="Describe what was done..." value="'+(l.other_desc||'')+'" style="width:100%;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" oninput="onLineOtherDescChange('+i+',this.value)"></div>':'')
+      +'</div>';
   }).join('');
   updateExpTotal();
 }
 
-async function saveExpense(){
-  const selVal=document.getElementById('exp-vrn').value;
-  const date=document.getElementById('exp-date').value;
-  let reg='', make='';
-
-  if(selVal==='__manual__'){
-    reg=document.getElementById('exp-vrn-manual').value.trim().toUpperCase();
-    make='Unknown';
-  } else if(selVal){
-    reg=selVal;
-    const v=vehicles.find(v=>v.reg===selVal);
-    make=v?v.make:'';
-  }
-
-  if(!reg||!date){alert('Select vehicle and date.');return;}
-  if(expLines.length===0){alert('Add at least one line item.');return;}
-  if(expLines.some(l=>!l.item)){alert('All lines must have an item selected.');return;}
-
-  const total=expLines.reduce((a,l)=>a+(l.total||0),0);
-
-  const{data:exp,error}=await sb.from('expenses').insert([{
-    reg, make, job_date:date,
-    notes:document.getElementById('exp-notes').value,
-    invoiced:false
-  }]).select().single();
-
-  if(error){alert('Error: '+error.message);return;}
-
-  const lines=expLines.map(l=>({
-    expense_id:exp.id,
-    item:l.item,
-    quantity:l.quantity||0,
-    unit:l.unit||'unit',
-    hours:l.hours||0,
-    unit_price:l.unit_price||0,
-    total:l.total||0
-  }));
-
-  await sb.from('expense_lines').insert(lines);
-
-  // Reset form
+function resetExpenseForm(){
   document.getElementById('exp-vrn').value='';
   document.getElementById('exp-date').value='';
   document.getElementById('exp-notes').value='';
   document.getElementById('exp-manual-wrap').style.display='none';
   document.getElementById('exp-make-display').style.display='none';
-  expLines=[];
+  expLines=[];editingExpenseId=null;
   renderExpLines();
+  const btn=document.querySelector('[onclick="saveExpense()"]');
+  if(btn) btn.textContent='Save job record';
+}
+
+async function saveExpense(){
+  const selVal=document.getElementById('exp-vrn').value;
+  const date=document.getElementById('exp-date').value;
+  let reg='',make='';
+  if(selVal==='__manual__'){reg=document.getElementById('exp-vrn-manual').value.trim().toUpperCase();make='Unknown';}
+  else if(selVal){reg=selVal;const v=vehicles.find(v=>v.reg===selVal);make=v?v.make:'';}
+  if(!reg||!date){alert('Select vehicle and date.');return;}
+  if(expLines.length===0){alert('Add at least one line item.');return;}
+  if(expLines.some(l=>!l.item)){alert('All lines must have an item selected.');return;}
+  if(expLines.some(l=>l.item==='Other'&&!l.other_desc)){alert('Please describe the "Other" item.');return;}
+
+  if(editingExpenseId){
+    await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
+    await sb.from('expense_lines').delete().eq('expense_id',editingExpenseId);
+    const lines=expLines.map(l=>({expense_id:editingExpenseId,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
+    await sb.from('expense_lines').insert(lines);
+  } else {
+    const{data:exp,error}=await sb.from('expenses').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
+    if(error){alert('Error: '+error.message);return;}
+    const lines=expLines.map(l=>({expense_id:exp.id,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
+    await sb.from('expense_lines').insert(lines);
+  }
+  resetExpenseForm();
   loadExpenses();
-  alert('Job record saved!');
+}
+
+function editExpense(id){
+  const e=expenses.find(e=>e.id===id);
+  if(!e) return;
+  editingExpenseId=id;
+  const sel=document.getElementById('exp-vrn');
+  const fleetMatch=vehicles.find(v=>v.reg===e.reg);
+  if(fleetMatch){sel.value=e.reg;currentExpMake=e.make;document.getElementById('exp-make-display').style.display='block';document.getElementById('exp-make-display').textContent='Make: '+e.make;}
+  else{sel.value='__manual__';document.getElementById('exp-manual-wrap').style.display='block';document.getElementById('exp-vrn-manual').value=e.reg;}
+  document.getElementById('exp-date').value=e.job_date;
+  document.getElementById('exp-notes').value=e.notes||'';
+  expLines=(e.expense_lines||[]).map(l=>{
+    const isOther=l.item.startsWith('Other: ');
+    return{item:isOther?'Other':l.item,other_desc:isOther?l.item.replace('Other: ',''):'',quantity:l.quantity,unit:l.unit,hours:l.hours,unit_price:l.unit_price,total:l.total,is_labour:l.unit==='hour'};
+  });
+  renderExpLines();
+  const btn=document.querySelector('[onclick="saveExpense()"]');
+  if(btn) btn.textContent='Update job record';
+  document.getElementById('tab-expenses').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
 
 function renderExpenses(){
   const today=new Date();
-  const thisMonth=expenses.filter(e=>{
-    const d=new Date(e.job_date);
-    return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();
-  });
-  const monthTotal=thisMonth.reduce((a,e)=>{
-    const t=(e.expense_lines||[]).reduce((s,l)=>s+(l.total||0),0);
-    return a+t;
-  },0);
+  const thisMonth=expenses.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
+  const monthTotal=thisMonth.reduce((a,e)=>{const t=(e.expense_lines||[]).reduce((s,l)=>s+(l.total||0),0);return a+t;},0);
   const uninvoiced=expenses.filter(e=>!e.invoiced).length;
-
-  const el1=document.getElementById('e-month');
-  const el2=document.getElementById('e-uninvoiced');
-  const el3=document.getElementById('e-total');
-  if(el1) el1.textContent='\u00a3'+monthTotal.toFixed(2);
+  const el1=document.getElementById('e-month');const el2=document.getElementById('e-uninvoiced');const el3=document.getElementById('e-total');
+  if(el1) el1.textContent='\u00a3'+(monthTotal*1.2).toFixed(2);
   if(el2) el2.textContent=uninvoiced+' jobs';
   if(el3) el3.textContent=expenses.length;
-
   const tbody=document.getElementById('expenses-tbody');
   if(!tbody) return;
   tbody.innerHTML=expenses.length?expenses.map(e=>{
     const lines=e.expense_lines||[];
-    const total=lines.reduce((a,l)=>a+(l.total||0),0);
+    const subtotal=lines.reduce((a,l)=>a+(l.total||0),0);
+    const vat=subtotal*0.2;
+    const total=subtotal+vat;
     const itemSummary=lines.map(l=>l.item).join(', ');
-    return`<tr>
-      <td style="font-size:12px;color:#8a8278">${e.job_date}</td>
-      <td style="font-weight:700">${e.reg}</td>
-      <td style="color:#8a8278">${e.make||'\u2014'}</td>
-      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itemSummary}">${itemSummary||'\u2014'}</td>
-      <td style="font-weight:700">\u00a3${total.toFixed(2)}</td>
-      <td><span class="badge ${e.invoiced?'badge-done':'badge-pending'}">${e.invoiced?'Invoiced':'Pending'}</span></td>
-      <td style="display:flex;gap:4px">
-        <button class="btn btn-sm" onclick="viewExpense(${e.id})">View</button>
-        ${!e.invoiced?`<button class="btn btn-sm btn-primary" onclick="markInvoiced(${e.id})">Mark invoiced</button>`:''}
-        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.id})">\u2715</button>
-      </td>
-    </tr>`;
-  }).join(''):'<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
+    return'<tr>'
+      +'<td style="font-size:12px;color:#8a8278">'+e.job_date+'</td>'
+      +'<td style="font-weight:700">'+e.reg+'</td>'
+      +'<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+itemSummary+'">'+itemSummary+'</td>'
+      +'<td>\u00a3'+subtotal.toFixed(2)+'</td>'
+      +'<td style="color:#8a8278">\u00a3'+vat.toFixed(2)+'</td>'
+      +'<td style="font-weight:700">\u00a3'+total.toFixed(2)+'</td>'
+      +'<td><span class="badge '+(e.invoiced?'badge-done':'badge-pending')+'">'+(e.invoiced?'Invoiced':'Pending')+'</span></td>'
+      +'<td style="display:flex;gap:4px;flex-wrap:wrap">'
+      +'<button class="btn btn-sm" onclick="editExpense('+e.id+')">Edit</button>'
+      +(!e.invoiced?'<button class="btn btn-sm btn-primary" onclick="markInvoiced('+e.id+')">Invoiced</button>':'')
+      +'<button class="btn btn-sm btn-danger" onclick="deleteExpense('+e.id+')">&times;</button>'
+      +'</td></tr>';
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
 }
 
-async function markInvoiced(id){
-  await sb.from('expenses').update({invoiced:true}).eq('id',id);
-  loadExpenses();
-}
-
-async function deleteExpense(id){
-  if(!confirm('Delete this record?')) return;
-  await sb.from('expenses').delete().eq('id',id);
-  loadExpenses();
-}
-
-function viewExpense(id){
-  const e=expenses.find(e=>e.id===id);
-  if(!e) return;
-  const lines=e.expense_lines||[];
-  const total=lines.reduce((a,l)=>a+(l.total||0),0);
-  const linesHtml=lines.map(l=>`
-    <div class="modal-row">
-      <span>${l.item}</span>
-      <span style="color:#8a8278;font-size:12px">${l.unit==='fixed'?'fixed':l.unit==='hour'||l.is_labour?l.hours+'h':l.quantity+' '+l.unit}</span>
-      <span style="font-weight:600">\u00a3${(l.total||0).toFixed(2)}</span>
-    </div>`).join('');
-  document.getElementById('modal-title').textContent=`${e.reg} \u2014 ${e.job_date}`;
-  document.getElementById('modal-body').innerHTML=`
-    <div class="modal-row"><span class="modal-label">Vehicle</span><span>${e.reg} (${e.make||'?'})</span></div>
-    <div class="modal-row"><span class="modal-label">Date</span><span>${e.job_date}</span></div>
-    ${e.notes?`<div class="modal-row"><span class="modal-label">Notes</span><span>${e.notes}</span></div>`:''}
-    <div style="margin:12px 0 4px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Items</div>
-    ${linesHtml}
-    <div class="modal-row" style="margin-top:8px;border-top:1px solid rgba(0,0,0,0.1);padding-top:8px">
-      <span style="font-weight:700">Total</span>
-      <span></span>
-      <span style="font-weight:700;font-size:16px">\u00a3${total.toFixed(2)}</span>
-    </div>`;
-  document.getElementById('modal-start-btn').style.display='none';
-  document.getElementById('modal-done-btn').style.display='none';
-  document.getElementById('job-modal').classList.add('open');
-}
+async function markInvoiced(id){await sb.from('expenses').update({invoiced:true}).eq('id',id);loadExpenses();}
+async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('expenses').delete().eq('id',id);loadExpenses();}
 
 function renderPriceList(){
   const tbody=document.getElementById('pricelist-tbody');
   if(!tbody) return;
-  tbody.innerHTML=priceList.length?priceList.map(p=>`<tr>
-    <td style="font-weight:600">${p.item}</td>
-    <td><span class="badge badge-${(p.make||'all').toLowerCase()==='all'?'pending':'done'}">${p.make||'All'}</span></td>
-    <td>\u00a3${(p.unit_price||0).toFixed(2)}</td>
-    <td style="color:#8a8278">${p.unit}</td>
-    <td style="display:flex;gap:4px">
-      <button class="btn btn-sm btn-danger" onclick="deletePriceItem(${p.id})">\u2715</button>
-    </td>
-  </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#8a8278">No items</td></tr>';
+  tbody.innerHTML=priceList.length?priceList.map(p=>'<tr>'
+    +'<td style="font-weight:600">'+p.item+'</td>'
+    +'<td>\u00a3'+(p.unit_price||0).toFixed(2)+' <span style="font-size:10px;color:#8a8278">ex VAT</span></td>'
+    +'<td style="color:#8a8278">'+p.unit+'</td>'
+    +'<td><button class="btn btn-sm btn-danger" onclick="deletePriceItem('+p.id+')">&times;</button></td>'
+    +'</tr>').join(''):'<tr><td colspan="4" style="text-align:center;padding:20px;color:#8a8278">No items</td></tr>';
 }
 
-function showAddPriceForm(){
-  document.getElementById('add-price-form').style.display='block';
-}
+function showAddPriceForm(){document.getElementById('add-price-form').style.display='block';}
 
 async function savePriceItem(){
   const item=document.getElementById('pl-item').value.trim();
   if(!item){alert('Enter item name.');return;}
-  await sb.from('price_list').insert([{
-    item,
-    make:document.getElementById('pl-make').value,
-    unit_price:parseFloat(document.getElementById('pl-price').value)||0,
-    unit:document.getElementById('pl-unit').value
-  }]);
-  document.getElementById('pl-item').value='';
-  document.getElementById('pl-price').value='0';
+  await sb.from('price_list').insert([{item,make:'All',unit_price:parseFloat(document.getElementById('pl-price').value)||0,unit:document.getElementById('pl-unit').value}]);
+  document.getElementById('pl-item').value='';document.getElementById('pl-price').value='0';
   document.getElementById('add-price-form').style.display='none';
   loadPriceList();
 }
 
-async function deletePriceItem(id){
-  if(!confirm('Delete this price?')) return;
-  await sb.from('price_list').delete().eq('id',id);
-  loadPriceList();
-}
-
+async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
 
 setSyncStatus(false,'Connecting...');
 loadVehicles().then(()=>loadJobs());
