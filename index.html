@@ -55,8 +55,6 @@ tr:last-child td{border-bottom:none}
 .mot-ok{color:#0a5236;font-weight:600}
 .mot-warn{color:#856404;font-weight:600}
 .mot-due{color:#dc2626;font-weight:600}
-.stock-low{color:#856404;font-weight:600}
-.stock-out{color:#dc2626;font-weight:600}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-grid{display:grid;grid-template-columns:60px repeat(7,1fr);border-left:0.5px solid rgba(0,0,0,0.1);border-top:0.5px solid rgba(0,0,0,0.1)}
 .cal-head{background:#f5f0e8;padding:6px 4px;font-weight:700;text-align:center;font-size:10px;text-transform:uppercase;color:#8a8278;border-right:0.5px solid rgba(0,0,0,0.1);border-bottom:0.5px solid rgba(0,0,0,0.1)}
@@ -91,7 +89,7 @@ tr:last-child td{border-bottom:none}
 <div class="ws-header">
   <div>
     <div class="ws-logo">
-      <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.png" alt="Workship" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'">
+      <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.svg" alt="Workship" style="filter:invert(1)" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='block'">
       <div id="logo-fallback" style="display:none;font-size:22px;font-weight:900;color:#fff;text-transform:uppercase;font-family:Arial Black,Arial">WORK<span style="color:#e8a020">SHIP</span></div>
     </div>
     <div class="ws-tagline">Workshop Manager</div>
@@ -102,7 +100,7 @@ tr:last-child td{border-bottom:none}
       <button class="ws-nav-btn active" onclick="showTab('schedule',this)">&#128197; Schedule</button>
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
       <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
-      <button class="ws-nav-btn" onclick="showTab('Service Log',this)">&#128200; Service Log</button>
+      <button class="ws-nav-btn" onclick="showTab('servicelog',this)">&#128200; Service Log</button>
     </div>
   </div>
 </div>
@@ -221,9 +219,7 @@ tr:last-child td{border-bottom:none}
     <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:150px">
         <label>Filter by make</label>
-        <select id="mot-filter-make" onchange="renderMOT()">
-          <option value="">All makes</option>
-        </select>
+        <select id="mot-filter-make" onchange="renderMOT()"><option value="">All makes</option></select>
       </div>
       <div style="flex:1;min-width:150px">
         <label>Sort by</label>
@@ -265,14 +261,14 @@ tr:last-child td{border-bottom:none}
     <tbody id="fleet-tbody"></tbody></table>
   </div>
 </div>
-<!-- Service Log TAB -->
-<div id="tab-Service Log" class="tab">
+
+<!-- SERVICE LOG -->
+<div id="tab-servicelog" class="tab">
   <div class="metrics-row">
     <div class="ws-metric"><div class="ws-metric-label">This month</div><div class="ws-metric-value" id="e-month">—</div></div>
     <div class="ws-metric"><div class="ws-metric-label">Not invoiced</div><div class="ws-metric-value" id="e-uninvoiced" style="color:#856404">—</div></div>
     <div class="ws-metric"><div class="ws-metric-label">Total jobs</div><div class="ws-metric-value" id="e-total">—</div></div>
   </div>
-
   <div class="ws-card">
     <p class="ws-section-label">Log work — Dawid</p>
     <div class="form-row">
@@ -287,7 +283,7 @@ tr:last-child td{border-bottom:none}
         <label>Registration (manual)</label>
         <input type="text" id="exp-vrn-manual" placeholder="e.g. AB12CDE" style="text-transform:uppercase">
       </div>
-      <div id="exp-date-wrap">
+      <div>
         <label>Date</label>
         <input type="date" id="exp-date">
       </div>
@@ -318,15 +314,14 @@ tr:last-child td{border-bottom:none}
       <label>Notes</label>
       <input type="text" id="exp-notes" placeholder="Optional...">
     </div>
-    <div style="margin-top:14px;display:flex;gap:8px">
+    <div style="margin-top:14px">
       <button class="btn btn-primary" onclick="saveExpense()">Save job record</button>
     </div>
   </div>
-
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="ws-section-label" style="margin:0">Job records</p>
-      <select id="exp-filter-invoiced" onchange="loadService Log()" style="width:auto;font-size:12px;padding:6px 10px">
+      <select id="exp-filter-invoiced" onchange="loadExpenses()" style="width:auto;font-size:12px;padding:6px 10px">
         <option value="all">All records</option>
         <option value="false">Not invoiced</option>
         <option value="true">Invoiced</option>
@@ -334,10 +329,9 @@ tr:last-child td{border-bottom:none}
     </div>
     <table>
       <thead><tr><th>Date</th><th>Vehicle</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
-      <tbody id="Service Log-tbody"></tbody>
+      <tbody id="expenses-tbody"></tbody>
     </table>
   </div>
-
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
       <p class="ws-section-label" style="margin:0">Price list — Peter only</p>
@@ -349,12 +343,9 @@ tr:last-child td{border-bottom:none}
         <div><label>Price ex VAT (£)</label><input type="number" id="pl-price" value="0" step="0.01" min="0"></div>
         <div><label>Unit</label>
           <select id="pl-unit">
-            <option value="unit">unit</option>
-            <option value="hour">hour</option>
-            <option value="set">set</option>
-            <option value="pair">pair</option>
-            <option value="litre">litre</option>
-            <option value="fixed">fixed</option>
+            <option value="unit">unit</option><option value="hour">hour</option>
+            <option value="set">set</option><option value="pair">pair</option>
+            <option value="litre">litre</option><option value="fixed">fixed</option>
           </select>
         </div>
       </div>
@@ -377,18 +368,56 @@ const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 const SLOTS=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
 let jobs=[],motData={},vehicles=[],weekOffset=0,modalJobId=null;
+let expenses=[],priceList=[],expLines=[],currentExpMake='',editingExpenseId=null;
 
 function setSyncStatus(ok,msg){const el=document.getElementById('sync-status');el.textContent=msg;el.className='ws-sync '+(ok?'ok':'err');}
-async function loadVehicles(){const{data}=await sb.from('vehicles').select('*').order('reg');vehicles=data||[];populateVehicleDropdown();populateExpVehicleDropdown();}
-function populateExpVehicleDropdown(){const sel=document.getElementById('exp-vrn');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Select from fleet...</option><option value="__manual__">Other (type manually)</option>';vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} — ${v.make} ${v.model}`,v.reg));});if(cur)sel.value=cur;}
-async function loadJobs(){const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});if(error){setSyncStatus(false,'DB error');return;}jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();}
 
-async function loadMOT(){const{data}=await sb.from('mot_data').select('*');motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();}
+async function loadVehicles(){
+  const{data}=await sb.from('vehicles').select('*').order('reg');
+  vehicles=data||[];
+  populateVehicleDropdown();
+  populateExpVehicleDropdown();
+}
 
 function populateVehicleDropdown(){
   const sel=document.getElementById('job-vrn');
   sel.innerHTML='<option value="">Select vehicle...</option>';
   vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
+}
+
+function populateExpVehicleDropdown(){
+  const sel=document.getElementById('exp-vrn');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select from fleet...</option><option value="__manual__">Other (type manually)</option>';
+  vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
+  if(cur)sel.value=cur;
+}
+
+async function loadJobs(){
+  const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});
+  if(error){setSyncStatus(false,'DB error');return;}
+  jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();
+}
+
+async function loadMOT(){
+  const{data}=await sb.from('mot_data').select('*');
+  motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();
+}
+
+async function loadExpenses(){
+  const filter=document.getElementById('exp-filter-invoiced')?.value||'all';
+  let query=sb.from('expenses').select('*, expense_lines(*)').order('job_date',{ascending:false});
+  if(filter==='true') query=query.eq('invoiced',true);
+  if(filter==='false') query=query.eq('invoiced',false);
+  const{data}=await query;
+  expenses=data||[];
+  renderExpenses();
+}
+
+async function loadPriceList(){
+  const{data}=await sb.from('price_list').select('*').order('item');
+  priceList=data||[];renderPriceList();
 }
 
 function checkNotesRequired(){
@@ -410,7 +439,7 @@ function showTab(t,btn){
   if(t==='schedule')loadJobs();
   if(t==='mot'){loadVehicles();loadMOT();}
   if(t==='fleet'){loadVehicles();renderFleet();}
-  if(t==='Service Log'){loadService Log();loadPriceList();populateExpVehicleDropdown();}
+  if(t==='servicelog'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
 }
 
 function renderSchedule(){
@@ -507,8 +536,6 @@ function prevWeek(){weekOffset--;loadJobs();}
 function nextWeek(){weekOffset++;loadJobs();}
 function goToday(){weekOffset=0;loadJobs();}
 
-
-
 async function dvsa(reg){
   const r=await fetch(`/api/mot?reg=${reg.toUpperCase().replace(/\s/g,'')}`);
   if(!r.ok)return null;
@@ -547,12 +574,9 @@ async function checkAllFleet(){
   btn.disabled=false;btn.textContent='&#128197; Check all fleet';
   renderMOT();
 }
-
 function renderMOT(){
   const today=new Date();
   let active=vehicles.filter(v=>v.active);
-
-  // Populate make filter
   const makeFilter=document.getElementById('mot-filter-make');
   if(makeFilter){
     const makes=[...new Set(active.map(v=>v.make))].sort();
@@ -562,8 +586,6 @@ function renderMOT(){
     if(makes.includes(current))makeFilter.value=current;
     if(makeFilter.value)active=active.filter(v=>v.make===makeFilter.value);
   }
-
-  // Sort
   const sort=document.getElementById('mot-sort')?.value||'days';
   active=[...active].sort((a,b)=>{
     if(sort==='make')return a.make.localeCompare(b.make);
@@ -572,7 +594,6 @@ function renderMOT(){
     const db=motData[b.reg]?Math.ceil((new Date(motData[b.reg])-today)/864e5):9999;
     return da-db;
   });
-
   document.getElementById('mot-tbody').innerHTML=active.map(v=>{
     const exp=motData[v.reg];
     let s='<span style="color:#8a8278;font-size:11px">Not checked</span>';
@@ -614,79 +635,27 @@ async function addVehicle(){
 async function toggleVehicle(id,active){await sb.from('vehicles').update({active:!active}).eq('id',id);await loadVehicles();renderFleet();}
 async function deleteVehicle(id){if(!confirm('Permanently delete?'))return;await sb.from('vehicles').delete().eq('id',id);await loadVehicles();renderFleet();}
 
-// ============ Service log ============
-let Service Log=[], priceList=[], expLines=[], currentExpMake='', editingExpenseId=null;
-
-async function loadService Log(){
-  const filter=document.getElementById('exp-filter-invoiced')?.value||'all';
-  let query=sb.from('Service Log').select('*, expense_lines(*)').order('job_date',{ascending:false});
-  if(filter==='true') query=query.eq('invoiced',true);
-  if(filter==='false') query=query.eq('invoiced',false);
-  const{data}=await query;
-  Service Log=data||[];
-  renderService Log();
-}
-
-async function loadPriceList(){
-  const{data}=await sb.from('price_list').select('*').order('item');
-  priceList=data||[];
-  renderPriceList();
-}
-
+// ============ SERVICE LOG ============
 function onExpVehicleChange(){
   const val=document.getElementById('exp-vrn').value;
   const manualWrap=document.getElementById('exp-manual-wrap');
   const makeDisplay=document.getElementById('exp-make-display');
-  if(val==='__manual__'){
-    manualWrap.style.display='block';
-    makeDisplay.style.display='none';
-    currentExpMake='';
-  } else if(val){
-    manualWrap.style.display='none';
-    const v=vehicles.find(v=>v.reg===val);
-    currentExpMake=v?v.make:'';
-    makeDisplay.style.display='block';
-    makeDisplay.textContent='Make: '+currentExpMake;
-  } else {
-    manualWrap.style.display='none';
-    makeDisplay.style.display='none';
-    currentExpMake='';
-  }
+  if(val==='__manual__'){manualWrap.style.display='block';makeDisplay.style.display='none';currentExpMake='';}
+  else if(val){manualWrap.style.display='none';const v=vehicles.find(v=>v.reg===val);currentExpMake=v?v.make:'';makeDisplay.style.display='block';makeDisplay.textContent='Make: '+currentExpMake;}
+  else{manualWrap.style.display='none';makeDisplay.style.display='none';currentExpMake='';}
 }
 
-function getPrice(item){
-  return priceList.find(p=>p.item===item)||null;
-}
+function getPrice(item){return priceList.find(p=>p.item===item)||null;}
 
-function addExpLine(){
-  expLines.push({item:'',other_desc:'',quantity:1,unit:'unit',hours:0,unit_price:0,total:0,is_labour:false});
-  renderExpLines();
-}
+function addExpLine(){expLines.push({item:'',other_desc:'',quantity:1,unit:'unit',hours:0,unit_price:0,total:0,is_labour:false});renderExpLines();}
+function removeExpLine(i){expLines.splice(i,1);renderExpLines();}
 
-function removeExpLine(i){
-  expLines.splice(i,1);
-  renderExpLines();
-}
-
-function onLineItemChange(i, val){
+function onLineItemChange(i,val){
   expLines[i].item=val;
-  if(val==='Other'){
-    expLines[i].unit_price=0;
-    expLines[i].unit='unit';
-    expLines[i].is_labour=false;
-  } else {
-    const p=getPrice(val);
-    if(p){
-      expLines[i].unit_price=p.unit_price;
-      expLines[i].unit=p.unit;
-      expLines[i].is_labour=p.unit==='hour';
-      if(p.unit==='fixed'){expLines[i].quantity=1;expLines[i].hours=0;}
-    }
-  }
-  recalcLine(i);
-  renderExpLines();
+  if(val==='Other'){expLines[i].unit_price=0;expLines[i].unit='unit';expLines[i].is_labour=false;}
+  else{const p=getPrice(val);if(p){expLines[i].unit_price=p.unit_price;expLines[i].unit=p.unit;expLines[i].is_labour=p.unit==='hour';if(p.unit==='fixed'){expLines[i].quantity=1;expLines[i].hours=0;}}}
+  recalcLine(i);renderExpLines();
 }
-
 function onLineOtherDescChange(i,val){expLines[i].other_desc=val;}
 function onLineQtyChange(i,val){expLines[i].quantity=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
 function onLineHoursChange(i,val){expLines[i].hours=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
@@ -707,16 +676,16 @@ function updateExpTotal(){
   const s=document.getElementById('exp-subtotal-display');
   const v=document.getElementById('exp-vat-display');
   const t=document.getElementById('exp-total-display');
-  if(s) s.textContent='\u00a3'+subtotal.toFixed(2);
-  if(v) v.textContent='\u00a3'+vat.toFixed(2);
-  if(t) t.textContent='\u00a3'+total.toFixed(2);
+  if(s)s.textContent='\u00a3'+subtotal.toFixed(2);
+  if(v)v.textContent='\u00a3'+vat.toFixed(2);
+  if(t)t.textContent='\u00a3'+total.toFixed(2);
 }
 
 function renderExpLines(){
   const COMMON_ITEMS=['Labour','Diagnostic','Engine Oil','Oil Filter','Air Filter','Fuel Filter','Cabin Filter',
-    'Brake Pads Front','Brake Pads Rear','Brake Discs Front','Brake Discs Rear','Bulbs','Tyres','Other'];
+    'Brake Pads Front','Brake Pads Rear','Brake Discs Front','Brake Discs Rear','Bulbs','Tyres','Full Valeting','Other'];
   const container=document.getElementById('exp-lines');
-  if(!container) return;
+  if(!container)return;
   if(expLines.length===0){
     container.innerHTML='<div style="text-align:center;padding:16px;color:#8a8278;font-size:12px;border:1px dashed rgba(0,0,0,0.15);border-radius:8px">Click "+ Add line" to add items</div>';
     updateExpTotal();return;
@@ -732,7 +701,7 @@ function renderExpLines(){
       +(isFixed?'<input type="number" value="1" disabled style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.1);border-radius:6px;font-size:12px;background:#eee;color:#8a8278">'
         :isLabour?'<div style="display:flex;gap:4px;align-items:center"><input type="number" value="'+(l.hours||0)+'" min="0" step="0.5" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineHoursChange('+i+',this.value)"><span style="font-size:10px;color:#8a8278;white-space:nowrap">hrs</span></div>'
         :'<input type="number" value="'+(l.quantity||1)+'" min="0.5" step="0.5" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLineQtyChange('+i+',this.value)">')
-      +'<input type="number" value="'+(l.unit_price||0)+'" min="0" step="0.01" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLinePriceChange('+i+',this.value)" placeholder="£ ex VAT">'
+      +'<input type="number" value="'+(l.unit_price||0)+'" min="0" step="0.01" style="width:100%;padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onLinePriceChange('+i+',this.value)" placeholder="\u00a3 ex VAT">'
       +'<div style="text-align:right;font-weight:700;font-size:13px">\u00a3'+(l.total||0).toFixed(2)+'</div>'
       +'<button class="btn btn-sm btn-danger" onclick="removeExpLine('+i+')">&times;</button>'
       +'</div>'
@@ -751,7 +720,7 @@ function resetExpenseForm(){
   expLines=[];editingExpenseId=null;
   renderExpLines();
   const btn=document.querySelector('[onclick="saveExpense()"]');
-  if(btn) btn.textContent='Save job record';
+  if(btn)btn.textContent='Save job record';
 }
 
 async function saveExpense(){
@@ -766,23 +735,22 @@ async function saveExpense(){
   if(expLines.some(l=>l.item==='Other'&&!l.other_desc)){alert('Please describe the "Other" item.');return;}
 
   if(editingExpenseId){
-    await sb.from('Service Log').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
+    await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
     await sb.from('expense_lines').delete().eq('expense_id',editingExpenseId);
     const lines=expLines.map(l=>({expense_id:editingExpenseId,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
   } else {
-    const{data:exp,error}=await sb.from('Service Log').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
+    const{data:exp,error}=await sb.from('expenses').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
     if(error){alert('Error: '+error.message);return;}
     const lines=expLines.map(l=>({expense_id:exp.id,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
   }
   resetExpenseForm();
-  loadService Log();
+  loadExpenses();
 }
 
 function editExpense(id){
-  const e=Service Log.find(e=>e.id===id);
-  if(!e) return;
+  const e=expenses.find(e=>e.id===id);if(!e)return;
   editingExpenseId=id;
   const sel=document.getElementById('exp-vrn');
   const fleetMatch=vehicles.find(v=>v.reg===e.reg);
@@ -796,22 +764,22 @@ function editExpense(id){
   });
   renderExpLines();
   const btn=document.querySelector('[onclick="saveExpense()"]');
-  if(btn) btn.textContent='Update job record';
-  document.getElementById('tab-Service Log').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
+  if(btn)btn.textContent='Update job record';
+  document.getElementById('tab-servicelog').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
 
-function renderService Log(){
+function renderExpenses(){
   const today=new Date();
-  const thisMonth=Service Log.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
+  const thisMonth=expenses.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
   const monthTotal=thisMonth.reduce((a,e)=>{const t=(e.expense_lines||[]).reduce((s,l)=>s+(l.total||0),0);return a+t;},0);
-  const uninvoiced=Service Log.filter(e=>!e.invoiced).length;
+  const uninvoiced=expenses.filter(e=>!e.invoiced).length;
   const el1=document.getElementById('e-month');const el2=document.getElementById('e-uninvoiced');const el3=document.getElementById('e-total');
-  if(el1) el1.textContent='\u00a3'+(monthTotal*1.2).toFixed(2);
-  if(el2) el2.textContent=uninvoiced+' jobs';
-  if(el3) el3.textContent=Service Log.length;
-  const tbody=document.getElementById('Service Log-tbody');
-  if(!tbody) return;
-  tbody.innerHTML=Service Log.length?Service Log.map(e=>{
+  if(el1)el1.textContent='\u00a3'+(monthTotal*1.2).toFixed(2);
+  if(el2)el2.textContent=uninvoiced+' jobs';
+  if(el3)el3.textContent=expenses.length;
+  const tbody=document.getElementById('expenses-tbody');
+  if(!tbody)return;
+  tbody.innerHTML=expenses.length?expenses.map(e=>{
     const lines=e.expense_lines||[];
     const subtotal=lines.reduce((a,l)=>a+(l.total||0),0);
     const vat=subtotal*0.2;
@@ -833,12 +801,12 @@ function renderService Log(){
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
 }
 
-async function markInvoiced(id){await sb.from('Service Log').update({invoiced:true}).eq('id',id);loadService Log();}
-async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('Service Log').delete().eq('id',id);loadService Log();}
+async function markInvoiced(id){await sb.from('expenses').update({invoiced:true}).eq('id',id);loadExpenses();}
+async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('expenses').delete().eq('id',id);loadExpenses();}
 
 function renderPriceList(){
   const tbody=document.getElementById('pricelist-tbody');
-  if(!tbody) return;
+  if(!tbody)return;
   tbody.innerHTML=priceList.length?priceList.map(p=>'<tr>'
     +'<td style="font-weight:600">'+p.item+'</td>'
     +'<td>\u00a3'+(p.unit_price||0).toFixed(2)+' <span style="font-size:10px;color:#8a8278">ex VAT</span></td>'
@@ -846,9 +814,7 @@ function renderPriceList(){
     +'<td><button class="btn btn-sm btn-danger" onclick="deletePriceItem('+p.id+')">&times;</button></td>'
     +'</tr>').join(''):'<tr><td colspan="4" style="text-align:center;padding:20px;color:#8a8278">No items</td></tr>';
 }
-
 function showAddPriceForm(){document.getElementById('add-price-form').style.display='block';}
-
 async function savePriceItem(){
   const item=document.getElementById('pl-item').value.trim();
   if(!item){alert('Enter item name.');return;}
@@ -857,16 +823,16 @@ async function savePriceItem(){
   document.getElementById('add-price-form').style.display='none';
   loadPriceList();
 }
-
 async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
 
 setSyncStatus(false,'Connecting...');
-loadVehicles().then(()=>loadJobs());loadMOT();
+loadVehicles().then(()=>loadJobs());
+loadMOT();
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
   .on('postgres_changes',{event:'*',schema:'public',table:'mot_data'},()=>loadMOT())
   .on('postgres_changes',{event:'*',schema:'public',table:'vehicles'},()=>{loadVehicles();})
-  .on('postgres_changes',{event:'*',schema:'public',table:'Service Log'},()=>loadService Log())
+  .on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>loadExpenses())
   .subscribe();
 </script>
 </body>
