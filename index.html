@@ -1330,13 +1330,52 @@ function editInvoice(id){
   onInvCustomerChange();
   document.getElementById('inv-date').value = inv.invoice_date;
   document.getElementById('inv-notes').value = inv.notes||'';
-  document.getElementById('inv-records-section').style.display='none';
 
-  // Show edit mode indicator
+  // Show existing lines + pending jobs for editing
+  const recordsSection = document.getElementById('inv-records-section');
+  recordsSection.style.display = 'block';
+
+  // Show current invoice lines at top
+  const existingLinesDiv = document.getElementById('inv-existing-lines') || (() => {
+    const d = document.createElement('div');
+    d.id = 'inv-existing-lines';
+    recordsSection.insertBefore(d, recordsSection.firstChild);
+    return d;
+  })();
+
+  const invLines = inv.invoice_lines || [];
+  existingLinesDiv.innerHTML = invLines.length ? '<p class="ws-section-label" style="margin:8px 0 6px">Current invoice lines</p>'
+    + invLines.map((l,i) => '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff3cd;border-radius:8px;margin-bottom:4px;font-size:12px">'
+      +'<span style="flex:1">'+l.description+'</span>'
+      +'<span style="color:#8a8278">x'+l.qty+'</span>'
+      +'<span style="font-weight:600">£'+(l.total||0).toFixed(2)+'</span>'
+      +'<button class="btn btn-sm btn-danger" onclick="removeInvLine('+inv.id+','+l.id+',this)">×</button>'
+      +'</div>').join('')
+    + '<div style="height:1px;background:rgba(0,0,0,0.1);margin:10px 0"></div><p class="ws-section-label" style="margin:0 0 6px">Add more jobs</p>'
+    : '';
+
   const saveBtn = document.getElementById('inv-generate-btn');
   if(saveBtn){saveBtn.textContent='Update invoice';saveBtn.setAttribute('onclick','saveEditedInvoice()');}
 
   document.getElementById('tab-invoices').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
+}
+
+async function removeInvLine(invoiceId, lineId, btn){
+  btn.disabled=true;
+  await sb.from('invoice_lines').delete().eq('id', lineId);
+  // Recalc invoice total
+  const {data: lines} = await sb.from('invoice_lines').select('*').eq('invoice_id', invoiceId);
+  const subtotal = (lines||[]).reduce((a,l)=>a+(l.total||0),0);
+  const vat = subtotal*0.2;
+  await sb.from('invoices').update({subtotal, vat, total: subtotal+vat}).eq('id', invoiceId);
+  // Update local
+  const inv = savedInvoices.find(i=>i.id===invoiceId);
+  if(inv){
+    inv.invoice_lines = lines||[];
+    inv.subtotal=subtotal;inv.vat=vat;inv.total=subtotal+vat;
+  }
+  renderSavedInvoices();
+  editInvoice(invoiceId);
 }
 
 async function saveEditedInvoice(){
