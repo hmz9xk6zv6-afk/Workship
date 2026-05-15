@@ -459,6 +459,15 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 
+  <!-- SAVED INVOICES -->
+  <div class="ws-card">
+    <p class="ws-section-label">Invoice history</p>
+    <table>
+      <thead><tr><th>Number</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <tbody id="saved-invoices-tbody"></tbody>
+    </table>
+  </div>
+
   <!-- CUSTOMERS -->
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -1020,19 +1029,22 @@ function applyRoleUI(){
 
 
 // ============ INVOICES ============
-let customers = [], invoiceCounter = 0, pendingExpenses = [];
+// ============ INVOICES ============
+let customers = [], invoiceCounter = 0, pendingExpenses = [], savedInvoices = [], editingInvoiceId = null;
 
 async function loadInvoices(){
   const {data: cust} = await sb.from('customers').select('*').order('name');
   customers = cust || [];
   const {data: counter} = await sb.from('invoice_counter').select('*').single();
   invoiceCounter = counter ? counter.last_number : 0;
-  // Load all pending (not invoiced) expenses with lines
   const {data: pending} = await sb.from('expenses').select('*, expense_lines(*)').eq('invoiced', false).order('job_date', {ascending: false});
   pendingExpenses = pending || [];
+  const {data: invs} = await sb.from('invoices').select('*, invoice_lines(*)').order('created_at', {ascending: false});
+  savedInvoices = invs || [];
 
   renderCustomers();
   populateCustomerDropdown();
+  renderSavedInvoices();
   document.getElementById('inv-customers').textContent = customers.length;
   document.getElementById('inv-next-num').textContent = 'INV-' + String(invoiceCounter + 1).padStart(3,'0');
   document.getElementById('inv-pending-count').textContent = pendingExpenses.length + ' jobs';
@@ -1062,9 +1074,9 @@ function onInvCustomerChange(){
     const c = customers.find(c => c.id == val);
     if(c){
       preview.style.display = 'block';
-      preview.innerHTML = '<strong>'+c.name+'</strong><br>'+(c.address||'')+'<br>'+(c.city||'')+' '+(c.postcode||'')+(c.email?'<br>'+c.email:'')+(c.ref?'<br>Ref: '+c.ref:'');
+      preview.innerHTML = '<strong>'+c.name+'</strong><br>'+(c.address||'')+'<br>'+(c.city||'')+' '+(c.postcode||'')+(c.email?'<br>'+c.email:'');
     }
-    recordsSection.style.display = 'block';
+    recordsSection.style.display = editingInvoiceId ? 'none' : 'block';
   } else {
     preview.style.display = 'none';
     newForm.style.display = 'none';
@@ -1095,8 +1107,7 @@ function renderInvRecords(){
       +'<div style="text-align:right">'
       +'<div style="font-weight:700;font-size:13px">£'+total.toFixed(2)+'</div>'
       +'<div style="font-size:10px;color:#8a8278">inc VAT</div>'
-      +'</div>'
-      +'</div>';
+      +'</div></div>';
   }).join('');
 }
 
@@ -1116,8 +1127,7 @@ async function saveNewCustomer(){
   const name = document.getElementById('nc-name').value.trim();
   if(!name){alert('Enter company name.');return;}
   const {data, error} = await sb.from('customers').insert([{
-    name,
-    address: document.getElementById('nc-address').value,
+    name, address: document.getElementById('nc-address').value,
     city: document.getElementById('nc-city').value,
     postcode: document.getElementById('nc-postcode').value,
     email: document.getElementById('nc-email').value,
@@ -1157,44 +1167,43 @@ function renderCustomers(){
   </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:#8a8278">No customers yet</td></tr>';
 }
 
-function buildInvoiceHTML(invNumber, customer, date, selectedExpenses, notes){
-  const _d=new Date(date);const fmtDate=_d.getDate().toString().padStart(2,'0')+'.'+((_d.getMonth()+1).toString().padStart(2,'0'))+'.'+_d.getFullYear();
-
-  // Group by reg
+function buildInvoiceLines(selectedExpenses){
   const grouped = {};
   selectedExpenses.forEach(e => {
     if(!grouped[e.reg]) grouped[e.reg] = [];
     (e.expense_lines||[]).forEach(l => grouped[e.reg].push(l));
   });
-
-  let allSubtotal = 0;
-  let lineRows = '';
-  Object.entries(grouped).forEach(([reg, lines]) => {
-    lines.forEach(l => {
+  const lines = [];
+  Object.entries(grouped).forEach(([reg, items]) => {
+    items.forEach(l => {
       const qty = l.unit === 'hour' ? l.hours : l.quantity;
-      const desc = reg + ' ' + l.item;
-      allSubtotal += (l.total||0);
-      lineRows += `<tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${desc}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${qty||1}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">£ ${(l.unit_price||0).toFixed(2)}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">£ ${(l.total||0).toFixed(2)}</td>
-      </tr>`;
+      lines.push({description: reg + ' ' + l.item, qty: qty||1, unit_price: l.unit_price||0, total: l.total||0});
     });
   });
+  return lines;
+}
 
-  const vat = allSubtotal * 0.2;
-  const total = allSubtotal + vat;
+function buildInvoiceHTML(invNumber, customer, date, lines, notes, status){
+  const _d=new Date(date);const fmtDate=_d.getDate().toString().padStart(2,'0')+'.'+((_d.getMonth()+1).toString().padStart(2,'0'))+'.'+_d.getFullYear();
+  const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
+  const vat = subtotal*0.2;
+  const total = subtotal+vat;
 
-  return `<div style="font-family:Arial,sans-serif;color:#1e1c1b;max-width:750px;margin:0 auto">
+  const lineRows = lines.map(l=>`<tr>
+    <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${l.description}</td>
+    <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${l.qty}</td>
+    <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">£ ${(l.unit_price||0).toFixed(2)}</td>
+    <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">£ ${(l.total||0).toFixed(2)}</td>
+  </tr>`).join('');
+
+  const voidBanner = status==='void' ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:80px;font-weight:900;color:rgba(220,38,38,0.15);white-space:nowrap;pointer-events:none">VOID</div>' : '';
+
+  return `<div style="font-family:Arial,sans-serif;color:#1e1c1b;max-width:750px;margin:0 auto;position:relative">
+    ${voidBanner}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
       <div>
         <div style="font-size:22px;font-weight:900;color:#1e1c1b;font-family:Arial Black,Arial;text-transform:uppercase;margin-bottom:8px">Workship Ltd.</div>
-        <div style="font-size:12px;color:#555;line-height:1.8">
-          156 Viglen House<br>Alperton Lane<br>London<br>HA0 1HD<br>
-          <strong>Reg number:</strong> 13232524<br>
-          <strong>Vat Number:</strong> 461679757
-        </div>
+        <div style="font-size:12px;color:#555;line-height:1.8">156 Viglen House<br>Alperton Lane<br>London<br>HA0 1HD<br><strong>Reg number:</strong> 13232524<br><strong>Vat Number:</strong> 461679757</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:36px;font-weight:900;color:#1e1c1b;letter-spacing:2px">INVOICE</div>
@@ -1212,38 +1221,28 @@ function buildInvoiceHTML(invNumber, customer, date, selectedExpenses, notes){
     </div>
     <div style="margin-bottom:24px">
       <div style="background:#2d6a4f;color:#fff;display:inline-block;padding:5px 16px;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px">BILL TO</div>
-      <div style="font-size:13px;line-height:1.8;color:#333">
-        <strong>${customer.name}</strong><br>
-        ${customer.address||''}<br>
-        ${customer.city||''} ${customer.postcode||''}
-        ${customer.ref?'<br><br>Ref: '+customer.ref:''}
-      </div>
+      <div style="font-size:13px;line-height:1.8;color:#333"><strong>${customer.name}</strong><br>${customer.address||''}<br>${customer.city||''} ${customer.postcode||''}</div>
     </div>
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
-      <thead>
-        <tr style="background:#2d6a4f;color:#fff">
-          <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700">Details</th>
-          <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:700;width:60px">Qty</th>
-          <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Unit Price</th>
-          <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Amount</th>
-        </tr>
-      </thead>
+      <thead><tr style="background:#2d6a4f;color:#fff">
+        <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700">Details</th>
+        <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:700;width:60px">Qty</th>
+        <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Unit Price</th>
+        <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Amount</th>
+      </tr></thead>
       <tbody>${lineRows}</tbody>
     </table>
     <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px">
       <div style="font-size:14px;color:#2d6a4f;font-style:italic;font-weight:600">Thank you for your business!</div>
       <table style="border-collapse:collapse;min-width:240px">
-        <tr><td style="padding:6px 16px;background:#f5f5f5;font-size:12px;font-weight:600">SUBTOTAL</td><td style="padding:6px 16px;background:#f5f5f5;text-align:right;font-size:12px">£ ${allSubtotal.toFixed(2)}</td></tr>
+        <tr><td style="padding:6px 16px;background:#f5f5f5;font-size:12px;font-weight:600">SUBTOTAL</td><td style="padding:6px 16px;background:#f5f5f5;text-align:right;font-size:12px">£ ${subtotal.toFixed(2)}</td></tr>
         <tr><td style="padding:6px 16px;font-size:12px;font-weight:600">TAX RATE</td><td style="padding:6px 16px;text-align:right;font-size:12px">20%</td></tr>
         <tr><td style="padding:6px 16px;background:#f5f5f5;font-size:12px;font-weight:600">TAX</td><td style="padding:6px 16px;background:#f5f5f5;text-align:right;font-size:12px">£ ${vat.toFixed(2)}</td></tr>
-        <tr style="background:#2d6a4f;color:#fff">
-          <td style="padding:8px 16px;font-size:13px;font-weight:700">TOTAL</td>
-          <td style="padding:8px 16px;text-align:right;font-size:14px;font-weight:700">£ ${total.toFixed(2)}</td>
-        </tr>
+        <tr style="background:#2d6a4f;color:#fff"><td style="padding:8px 16px;font-size:13px;font-weight:700">TOTAL</td><td style="padding:8px 16px;text-align:right;font-size:14px;font-weight:700">£ ${total.toFixed(2)}</td></tr>
       </table>
     </div>
     <div style="font-size:12px;color:#555;border-top:1px solid #e0e0e0;padding-top:16px">
-      <strong>Bank Details:</strong> Account number: 91459996 &nbsp; Sort Code: 40-11-60<br>
+      <strong>Bank Details:</strong> Account holder: Workship Ltd. &nbsp; Account number: 91459996 &nbsp; Sort Code: 40-11-60<br>
       ${notes||'Payment is due within 14 days'}
     </div>
   </div>`;
@@ -1252,13 +1251,21 @@ function buildInvoiceHTML(invNumber, customer, date, selectedExpenses, notes){
 function previewInvoice(){
   const custId = document.getElementById('inv-customer').value;
   if(!custId||custId==='__new__'){alert('Select a customer.');return;}
-  const selected = getSelectedExpenses();
-  if(selected.length===0){alert('Select at least one job from Service Log.');return;}
   const customer = customers.find(c=>c.id==custId);
   const date = document.getElementById('inv-date').value;
   const notes = document.getElementById('inv-notes').value;
-  const nextNum = 'INV-' + String(invoiceCounter+1).padStart(3,'0');
-  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(nextNum, customer, date, selected, notes);
+
+  let lines = [];
+  if(editingInvoiceId){
+    const inv = savedInvoices.find(i=>i.id===editingInvoiceId);
+    lines = inv ? (inv.invoice_lines||[]) : [];
+  } else {
+    const selected = getSelectedExpenses();
+    if(selected.length===0){alert('Select at least one job from Service Log.');return;}
+    lines = buildInvoiceLines(selected);
+  }
+  const invNumber = editingInvoiceId ? savedInvoices.find(i=>i.id===editingInvoiceId).invoice_number : 'INV-' + String(invoiceCounter+1).padStart(3,'0');
+  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, lines, notes, 'active');
   document.getElementById('inv-preview-overlay').style.display='block';
 }
 
@@ -1272,23 +1279,124 @@ async function generateInvoice(){
   const notes = document.getElementById('inv-notes').value;
   const nextNum = invoiceCounter+1;
   const invNumber = 'INV-' + String(nextNum).padStart(3,'0');
+  const lines = buildInvoiceLines(selected);
+  const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
+  const vat = subtotal*0.2;
+
+  // Save invoice to DB
+  const {data: inv, error} = await sb.from('invoices').insert([{
+    invoice_number: invNumber,
+    customer_id: parseInt(custId),
+    customer_name: customer.name,
+    invoice_date: date,
+    notes,
+    subtotal,
+    vat,
+    total: subtotal+vat,
+    status: 'active'
+  }]).select().single();
+  if(error){alert('Error saving invoice: '+error.message);return;}
+
+  // Save lines
+  await sb.from('invoice_lines').insert(lines.map(l=>({invoice_id:inv.id, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total})));
 
   // Increment counter
   await sb.from('invoice_counter').update({last_number: nextNum}).eq('id',1);
   invoiceCounter = nextNum;
 
-  // Mark selected expenses as invoiced
+  // Mark expenses as invoiced
   const ids = selected.map(e=>e.id);
   await sb.from('expenses').update({invoiced:true}).in('id', ids);
   pendingExpenses = pendingExpenses.filter(e=>!ids.includes(e.id));
 
+  // Reload
+  inv.invoice_lines = lines.map((l,i)=>({...l, id:i}));
+  savedInvoices.unshift(inv);
+  renderSavedInvoices();
+  renderInvRecords();
   document.getElementById('inv-next-num').textContent = 'INV-' + String(invoiceCounter+1).padStart(3,'0');
   document.getElementById('inv-pending-count').textContent = pendingExpenses.length + ' jobs';
-  renderInvRecords();
 
-  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, selected, notes);
+  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, lines, notes, 'active');
   document.getElementById('inv-preview-overlay').style.display='block';
   setTimeout(()=>printInvoice(), 400);
+}
+
+function editInvoice(id){
+  const inv = savedInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  editingInvoiceId = id;
+  document.getElementById('inv-customer').value = inv.customer_id;
+  onInvCustomerChange();
+  document.getElementById('inv-date').value = inv.invoice_date;
+  document.getElementById('inv-notes').value = inv.notes||'';
+  document.getElementById('inv-records-section').style.display='none';
+
+  // Show edit mode indicator
+  const saveBtn = document.querySelector('[onclick="generateInvoice()"]');
+  if(saveBtn) saveBtn.textContent = 'Update invoice';
+  saveBtn.onclick = saveEditedInvoice;
+
+  document.getElementById('tab-invoices').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
+}
+
+async function saveEditedInvoice(){
+  if(!editingInvoiceId)return;
+  const custId = document.getElementById('inv-customer').value;
+  const customer = customers.find(c=>c.id==custId);
+  const date = document.getElementById('inv-date').value;
+  const notes = document.getElementById('inv-notes').value;
+
+  await sb.from('invoices').update({
+    customer_id: parseInt(custId),
+    customer_name: customer.name,
+    invoice_date: date,
+    notes
+  }).eq('id', editingInvoiceId);
+
+  // Update local
+  const inv = savedInvoices.find(i=>i.id===editingInvoiceId);
+  if(inv){inv.customer_id=parseInt(custId);inv.customer_name=customer.name;inv.invoice_date=date;inv.notes=notes;}
+  renderSavedInvoices();
+
+  // Reset form
+  editingInvoiceId = null;
+  const saveBtn = document.querySelector('[onclick="saveEditedInvoice()"]')||document.querySelector('button[onclick*="Invoice"]');
+  if(saveBtn){saveBtn.textContent='ኂ03 Generate PDF';saveBtn.onclick=generateInvoice;}
+  alert('Invoice updated!');
+}
+
+async function voidInvoice(id){
+  if(!confirm('Mark this invoice as VOID? This cannot be undone.'))return;
+  await sb.from('invoices').update({status:'void'}).eq('id',id);
+  const inv = savedInvoices.find(i=>i.id===id);
+  if(inv) inv.status='void';
+  renderSavedInvoices();
+}
+
+function viewInvoice(id){
+  const inv = savedInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  const customer = customers.find(c=>c.id===inv.customer_id)||{name:inv.customer_name,address:'',city:'',postcode:''};
+  const lines = inv.invoice_lines||[];
+  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(inv.invoice_number, customer, inv.invoice_date, lines, inv.notes, inv.status);
+  document.getElementById('inv-preview-overlay').style.display='block';
+}
+
+function renderSavedInvoices(){
+  const tbody = document.getElementById('saved-invoices-tbody');
+  if(!tbody)return;
+  tbody.innerHTML = savedInvoices.length ? savedInvoices.map(inv=>`<tr style="${inv.status==='void'?'opacity:0.5':''}">
+    <td style="font-weight:700;color:${inv.status==='void'?'#dc2626':'#1e1c1b'}">${inv.invoice_number}${inv.status==='void'?' (VOID)':''}</td>
+    <td style="font-weight:600">${inv.customer_name}</td>
+    <td style="color:#8a8278;font-size:12px">${inv.invoice_date}</td>
+    <td style="font-weight:700">£${(inv.total||0).toFixed(2)}</td>
+    <td><span class="badge ${inv.status==='void'?'badge-pending':'badge-done'}">${inv.status}</span></td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="viewInvoice(${inv.id})">View</button>
+      ${inv.status!=='void'?`<button class="btn btn-sm" onclick="editInvoice(${inv.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="voidInvoice(${inv.id})">Void</button>`:''}
+    </td>
+  </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#8a8278">No invoices yet</td></tr>';
 }
 
 function printInvoice(){
@@ -1300,7 +1408,6 @@ function printInvoice(){
   setTimeout(()=>win.print(),500);
 }
 
-// Check existing session on load
 sb.auth.getSession().then(({data:{session}})=>{
   if(session){
     initApp(session.user);
