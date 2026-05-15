@@ -266,7 +266,7 @@ tr:last-child td{border-bottom:none}
     <div class="ws-metric"><div class="ws-metric-label">Active</div><div class="ws-metric-value" id="f-active">—</div></div>
     <div class="ws-metric"><div class="ws-metric-label">Inactive</div><div class="ws-metric-value" id="f-inactive" style="color:#8a8278">—</div></div>
   </div>
-  <div class="ws-card">
+  <div class="ws-card" id="fleet-add-card">
     <p class="ws-section-label">Add new vehicle</p>
     <div class="form-row4">
       <div><label>Registration</label><input type="text" id="v-reg" placeholder="e.g. AB12CDE" style="text-transform:uppercase"></div>
@@ -910,12 +910,11 @@ async function initApp(user){
 
 function applyRoleUI(){
   if(!userRole) return;
-  // Hide fleet tab for dawid
-  const navBtns = document.querySelectorAll('.ws-nav-btn');
-  navBtns.forEach(btn => {
-    const t = btn.getAttribute('onclick');
-    if(t && t.includes('fleet') && !userRole.can_view_fleet) btn.style.display='none';
-  });
+  const isAdmin = userRole.role === 'admin';
+  if(!isAdmin){
+    const addCard = document.getElementById('fleet-add-card');
+    if(addCard) addCard.style.display='none';
+  }
 }
 
 // Check existing session on load
