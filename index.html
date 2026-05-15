@@ -1199,6 +1199,7 @@ function buildInvoiceHTML(invNumber, customer, date, lines, notes, status){
   const voidBanner = status==='void' ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:80px;font-weight:900;color:rgba(220,38,38,0.15);white-space:nowrap;pointer-events:none">VOID</div>' : '';
 
   return `<div style="font-family:Arial,sans-serif;color:#1e1c1b;max-width:750px;margin:0 auto;position:relative">
+    <div id="inv-meta" data-customer="${customer.name.replace(/"/g,'')}" data-number="${invNumber}" data-date="${fmtDate}" style="display:none"></div>
     ${voidBanner}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
       <div>
@@ -1440,12 +1441,10 @@ function renderSavedInvoices(){
 function printInvoice(){
   const content = document.getElementById('inv-preview-content').innerHTML;
   // Build filename
-  const invNumEl = content.match(/INVOICE #.*?<\/td>\s*<td[^>]*>(INV-\d+)/s);
-  const invNum = invNumEl ? invNumEl[1] : 'Invoice';
-  const custEl = content.match(/<strong>([^<]+)<\/strong>/);
-  const custName = custEl ? custEl[1].replace(/[^a-zA-Z0-9 ]/g,'').trim() : 'Customer';
-  const dateEl = content.match(/<td[^>]*>(\d{2}\.\d{2}\.\d{4})<\/td>/);
-  const invDate = dateEl ? dateEl[1].replace(/\./g,'-') : '';
+  const meta = document.getElementById('inv-meta');
+  const custName = meta ? meta.dataset.customer.replace(/[^a-zA-Z0-9 ]/g,'').trim() : 'Customer';
+  const invNum = meta ? meta.dataset.number : 'Invoice';
+  const invDate = meta ? meta.dataset.date.replace(/\./g,'-') : '';
   const filename = [custName, invNum, invDate].filter(Boolean).join('_');
 
   const win = window.open('','_blank');
