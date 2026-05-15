@@ -827,13 +827,14 @@ function renderExpenses(){
       +'<td><span class="badge '+(e.invoiced?'badge-done':'badge-pending')+'">'+(e.invoiced?'Invoiced':'Pending')+'</span></td>'
       +'<td style="display:flex;gap:4px;flex-wrap:wrap">'
       +'<button class="btn btn-sm" onclick="editExpense('+e.id+')">Edit</button>'
-      +(!e.invoiced?'<button class="btn btn-sm btn-primary" onclick="markInvoiced('+e.id+')">Invoiced</button>':'')
-      +'<button class="btn btn-sm btn-danger" onclick="deleteExpense('+e.id+')">&times;</button>'
+      +(userRole&&userRole.role==='admin'?(!e.invoiced?'<button class="btn btn-sm btn-primary" onclick="markInvoiced('+e.id+')">Mark Invoiced</button>':'<button class="btn btn-sm" onclick="markPending('+e.id+')">Mark Pending</button>'):'')
+      +(userRole&&userRole.role==='admin'?'<button class="btn btn-sm btn-danger" onclick="deleteExpense('+e.id+')">&times;</button>':'')
       +'</td></tr>';
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
 }
 
 async function markInvoiced(id){await sb.from('expenses').update({invoiced:true}).eq('id',id);loadExpenses();}
+async function markPending(id){await sb.from('expenses').update({invoiced:false}).eq('id',id);loadExpenses();}
 async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('expenses').delete().eq('id',id);loadExpenses();}
 
 function renderPriceList(){
