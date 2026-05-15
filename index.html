@@ -124,6 +124,7 @@ tr:last-child td{border-bottom:none}
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
       <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
       <button class="ws-nav-btn" onclick="showTab('servicelog',this)">&#128200; Service Log</button>
+      <button class="ws-nav-btn" id="nav-invoices" onclick="showTab('invoices',this)">&#128203; Invoices</button>
     </div>
   </div>
 </div>
@@ -387,6 +388,109 @@ tr:last-child td{border-bottom:none}
     </table>
   </div>
 </div>
+
+<!-- INVOICES -->
+<div id="tab-invoices" class="tab">
+  <div class="metrics-row">
+    <div class="ws-metric"><div class="ws-metric-label">Total invoices</div><div class="ws-metric-value" id="inv-total">—</div></div>
+    <div class="ws-metric"><div class="ws-metric-label">This month</div><div class="ws-metric-value" id="inv-month">—</div></div>
+    <div class="ws-metric"><div class="ws-metric-label">Customers</div><div class="ws-metric-value" id="inv-customers">—</div></div>
+  </div>
+
+  <!-- NEW INVOICE -->
+  <div class="ws-card">
+    <p class="ws-section-label">Create invoice</p>
+    <div class="form-row">
+      <div>
+        <label>Customer</label>
+        <select id="inv-customer" onchange="onInvCustomerChange()">
+          <option value="">Select customer...</option>
+          <option value="__new__">+ Add new customer</option>
+        </select>
+      </div>
+      <div>
+        <label>Invoice date</label>
+        <input type="date" id="inv-date">
+      </div>
+    </div>
+    <div id="inv-new-customer-form" style="display:none;background:#f5f0e8;border-radius:8px;padding:14px;margin-top:12px">
+      <p class="ws-section-label" style="margin-bottom:12px">New customer</p>
+      <div class="form-row">
+        <div><label>Company name</label><input type="text" id="nc-name" placeholder="e.g. Locktel Ltd"></div>
+        <div><label>Reference / PO</label><input type="text" id="nc-ref" placeholder="e.g. 475/YB51617"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Address</label><input type="text" id="nc-address" placeholder="Street address"></div>
+        <div><label>City</label><input type="text" id="nc-city" placeholder="London"></div>
+      </div>
+      <div class="form-row">
+        <div><label>Postcode</label><input type="text" id="nc-postcode" placeholder="HA0 1HD"></div>
+        <div><label>Email</label><input type="text" id="nc-email" placeholder="billing@company.com"></div>
+      </div>
+      <div class="form-row">
+        <div><label>VAT number</label><input type="text" id="nc-vat" placeholder="Optional"></div>
+        <div><label>Reg number</label><input type="text" id="nc-reg" placeholder="Optional"></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveNewCustomer()">Save customer</button>
+        <button class="btn btn-sm" onclick="document.getElementById('inv-new-customer-form').style.display='none';document.getElementById('inv-customer').value=''">Cancel</button>
+      </div>
+    </div>
+    <div id="inv-customer-preview" style="display:none;margin-top:8px;padding:10px 14px;background:#f5f0e8;border-radius:8px;font-size:12px;color:#1e1c1b;line-height:1.8"></div>
+
+    <!-- LINE ITEMS -->
+    <div style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <p class="ws-section-label" style="margin:0">Line items</p>
+        <button class="btn btn-sm btn-primary" onclick="addInvLine()">+ Add line</button>
+      </div>
+      <div id="inv-lines"></div>
+      <div style="margin-top:8px;padding:10px 12px;background:#f5f0e8;border-radius:8px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:#8a8278">Subtotal (ex VAT)</span>
+          <span style="font-size:13px;font-weight:600" id="inv-subtotal-display">£0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="font-size:12px;color:#8a8278">VAT (20%)</span>
+          <span style="font-size:13px;font-weight:600" id="inv-vat-display">£0.00</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:0.5px solid rgba(0,0,0,0.1);padding-top:8px;margin-top:4px">
+          <span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Total inc VAT</span>
+          <span style="font-size:18px;font-weight:700" id="inv-total-display">£0.00</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:8px">
+      <label>Notes</label>
+      <input type="text" id="inv-notes" placeholder="e.g. Payment is due within 14 days">
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="generateInvoice()">&#128203; Generate PDF</button>
+      <button class="btn" onclick="previewInvoice()">Preview</button>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="ws-card">
+    <p class="ws-section-label">Customers</p>
+    <table>
+      <thead><tr><th>Name</th><th>Address</th><th>Email</th><th>Ref</th><th></th></tr></thead>
+      <tbody id="customers-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- INVOICE PREVIEW MODAL -->
+  <div id="inv-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;overflow-y:auto;padding:20px">
+    <div style="max-width:800px;margin:0 auto">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+        <button class="btn btn-primary" onclick="printInvoice()">&#128438; Print / Save PDF</button>
+        <button class="btn" onclick="document.getElementById('inv-preview-overlay').style.display='none'">Close</button>
+      </div>
+      <div id="inv-preview-content" style="background:#fff;padding:48px;border-radius:8px;font-family:Arial,sans-serif"></div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -467,6 +571,7 @@ function showTab(t,btn){
   if(t==='mot'){loadVehicles();loadMOT();}
   if(t==='fleet'){loadVehicles();renderFleet();}
   if(t==='servicelog'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
+  if(t==='invoices'){loadInvoices();}
 }
 
 function renderSchedule(){
@@ -915,7 +1020,285 @@ function applyRoleUI(){
   if(!isAdmin){
     const addCard = document.getElementById('fleet-add-card');
     if(addCard) addCard.style.display='none';
+    const navInv = document.getElementById('nav-invoices');
+    if(navInv) navInv.style.display='none';
   }
+}
+
+
+// ============ INVOICES ============
+let customers = [], invLines = [], invoiceCounter = 0;
+
+async function loadInvoices(){
+  const {data: cust} = await sb.from('customers').select('*').order('name');
+  customers = cust || [];
+  const {data: counter} = await sb.from('invoice_counter').select('*').single();
+  invoiceCounter = counter ? counter.last_number : 0;
+  renderCustomers();
+  populateCustomerDropdown();
+  document.getElementById('inv-customers').textContent = customers.length;
+  document.getElementById('inv-total').textContent = 'INV-' + String(invoiceCounter + 1).padStart(3,'0');
+  document.getElementById('inv-month').textContent = '—';
+  // Set today as default date
+  document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
+  if(invLines.length === 0) renderInvLines();
+}
+
+function populateCustomerDropdown(){
+  const sel = document.getElementById('inv-customer');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Select customer...</option><option value="__new__">+ Add new customer</option>';
+  customers.forEach(c => sel.add(new Option(c.name, c.id)));
+  if(cur) sel.value = cur;
+}
+
+function onInvCustomerChange(){
+  const val = document.getElementById('inv-customer').value;
+  const preview = document.getElementById('inv-customer-preview');
+  const newForm = document.getElementById('inv-new-customer-form');
+  if(val === '__new__'){
+    newForm.style.display = 'block';
+    preview.style.display = 'none';
+  } else if(val){
+    newForm.style.display = 'none';
+    const c = customers.find(c => c.id == val);
+    if(c){
+      preview.style.display = 'block';
+      preview.innerHTML = `<strong>${c.name}</strong><br>${c.address||''}<br>${c.city||''} ${c.postcode||''}${c.email?'<br>'+c.email:''}${c.ref?'<br>Ref: '+c.ref:''}`;
+    }
+  } else {
+    preview.style.display = 'none';
+    newForm.style.display = 'none';
+  }
+}
+
+async function saveNewCustomer(){
+  const name = document.getElementById('nc-name').value.trim();
+  if(!name){alert('Enter company name.');return;}
+  const {data, error} = await sb.from('customers').insert([{
+    name,
+    address: document.getElementById('nc-address').value,
+    city: document.getElementById('nc-city').value,
+    postcode: document.getElementById('nc-postcode').value,
+    email: document.getElementById('nc-email').value,
+    vat_number: document.getElementById('nc-vat').value,
+    reg_number: document.getElementById('nc-reg').value,
+    ref: document.getElementById('nc-ref').value
+  }]).select().single();
+  if(error){alert('Error: '+error.message);return;}
+  customers.push(data);
+  populateCustomerDropdown();
+  document.getElementById('inv-customer').value = data.id;
+  document.getElementById('inv-new-customer-form').style.display = 'none';
+  onInvCustomerChange();
+  renderCustomers();
+  document.getElementById('inv-customers').textContent = customers.length;
+  ['nc-name','nc-address','nc-city','nc-postcode','nc-email','nc-vat','nc-reg','nc-ref'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function deleteCustomer(id){
+  if(!confirm('Delete this customer?'))return;
+  await sb.from('customers').delete().eq('id',id);
+  customers = customers.filter(c=>c.id!==id);
+  renderCustomers();
+  populateCustomerDropdown();
+  document.getElementById('inv-customers').textContent = customers.length;
+}
+
+function renderCustomers(){
+  const tbody = document.getElementById('customers-tbody');
+  if(!tbody)return;
+  tbody.innerHTML = customers.length ? customers.map(c=>`<tr>
+    <td style="font-weight:600">${c.name}</td>
+    <td style="color:#8a8278;font-size:12px">${[c.address,c.city,c.postcode].filter(Boolean).join(', ')}</td>
+    <td style="color:#8a8278;font-size:12px">${c.email||'—'}</td>
+    <td style="color:#8a8278;font-size:12px">${c.ref||'—'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})">&times;</button></td>
+  </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:#8a8278">No customers yet</td></tr>';
+}
+
+function addInvLine(){
+  invLines.push({description:'',qty:1,unit_price:0,total:0});
+  renderInvLines();
+}
+function removeInvLine(i){invLines.splice(i,1);renderInvLines();}
+function onInvDescChange(i,val){invLines[i].description=val;}
+function onInvQtyChange(i,val){invLines[i].qty=parseFloat(val)||0;recalcInvLine(i);}
+function onInvPriceChange(i,val){invLines[i].unit_price=parseFloat(val)||0;recalcInvLine(i);}
+function recalcInvLine(i){
+  invLines[i].total=(invLines[i].qty||0)*(invLines[i].unit_price||0);
+  updateInvTotal();
+  document.getElementById('inv-line-total-'+i).textContent='£'+(invLines[i].total||0).toFixed(2);
+}
+function updateInvTotal(){
+  const subtotal=invLines.reduce((a,l)=>a+(l.total||0),0);
+  const vat=subtotal*0.2;
+  const s=document.getElementById('inv-subtotal-display');
+  const v=document.getElementById('inv-vat-display');
+  const t=document.getElementById('inv-total-display');
+  if(s)s.textContent='£'+subtotal.toFixed(2);
+  if(v)v.textContent='£'+vat.toFixed(2);
+  if(t)t.textContent='£'+(subtotal+vat).toFixed(2);
+}
+
+function renderInvLines(){
+  const container=document.getElementById('inv-lines');
+  if(!container)return;
+  if(invLines.length===0){
+    container.innerHTML='<div style="text-align:center;padding:16px;color:#8a8278;font-size:12px;border:1px dashed rgba(0,0,0,0.15);border-radius:8px">Click "+ Add line" to add items</div>';
+    updateInvTotal();return;
+  }
+  container.innerHTML=invLines.map((l,i)=>`
+    <div style="display:grid;grid-template-columns:3fr 1fr 1fr 1fr auto;gap:8px;align-items:center;margin-bottom:8px;padding:8px;background:#f9f8f6;border-radius:8px">
+      <input type="text" value="${l.description||''}" placeholder="Description (e.g. VK22NXA Oil service)" style="padding:7px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" oninput="onInvDescChange(${i},this.value)">
+      <input type="number" value="${l.qty||1}" min="0" step="0.5" style="padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onInvQtyChange(${i},this.value)" placeholder="Qty">
+      <input type="number" value="${l.unit_price||0}" min="0" step="0.01" style="padding:7px;border:0.5px solid rgba(0,0,0,0.2);border-radius:6px;font-size:12px" onchange="onInvPriceChange(${i},this.value)" placeholder="£ ex VAT">
+      <div id="inv-line-total-${i}" style="text-align:right;font-weight:700;font-size:13px">£${(l.total||0).toFixed(2)}</div>
+      <button class="btn btn-sm btn-danger" onclick="removeInvLine(${i})">&times;</button>
+    </div>`).join('');
+  updateInvTotal();
+}
+
+function buildInvoiceHTML(invNumber, customer, date, lines, notes){
+  const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
+  const vat = subtotal*0.2;
+  const total = subtotal+vat;
+  const fmtDate = new Date(date).toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'.');
+
+  const lineRows = lines.map(l=>`
+    <tr>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${l.description}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${l.qty}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">£ ${(l.unit_price||0).toFixed(2)}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">£ ${(l.total||0).toFixed(2)}</td>
+    </tr>`).join('');
+
+  return `
+    <div style="font-family:Arial,sans-serif;color:#1e1c1b;max-width:750px;margin:0 auto">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#1e1c1b;font-family:Arial Black,Arial;text-transform:uppercase;margin-bottom:8px">Workship Ltd.</div>
+          <div style="font-size:12px;color:#555;line-height:1.8">
+            156 Viglen House<br>Alperton Lane<br>London<br>HA0 1HD<br>
+            <strong>Reg number:</strong> 13232524<br>
+            <strong>Vat Number:</strong> 461679757
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:36px;font-weight:900;color:#1e1c1b;letter-spacing:2px">INVOICE</div>
+          <table style="margin-left:auto;margin-top:12px;border-collapse:collapse">
+            <tr>
+              <td style="background:#2d6a4f;color:#fff;padding:6px 16px;font-size:11px;font-weight:700;letter-spacing:1px">INVOICE #</td>
+              <td style="background:#2d6a4f;color:#fff;padding:6px 16px;font-size:11px;font-weight:700;letter-spacing:1px">DATE</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 16px;border:1px solid #e0e0e0;font-weight:700">${invNumber}</td>
+              <td style="padding:8px 16px;border:1px solid #e0e0e0">${fmtDate}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bill To -->
+      <div style="margin-bottom:24px">
+        <div style="background:#2d6a4f;color:#fff;display:inline-block;padding:5px 16px;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px">BILL TO</div>
+        <div style="font-size:13px;line-height:1.8;color:#333">
+          <strong>${customer.name}</strong><br>
+          ${customer.address||''}<br>
+          ${customer.city||''} ${customer.postcode||''}
+          ${customer.ref?'<br><br>Ref: '+customer.ref:''}
+          ${customer.vat_number?'&nbsp;&nbsp;UTR '+customer.vat_number:''}
+        </div>
+      </div>
+
+      <!-- Line items table -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:24px">
+        <thead>
+          <tr style="background:#2d6a4f;color:#fff">
+            <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:700">Details</th>
+            <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:700;width:60px">Qty</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Unit Price</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;font-weight:700;width:120px">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${lineRows}</tbody>
+      </table>
+
+      <!-- Totals -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:32px">
+        <div style="font-size:14px;color:#2d6a4f;font-style:italic;font-weight:600">Thank you for your business!</div>
+        <table style="border-collapse:collapse;min-width:240px">
+          <tr>
+            <td style="padding:6px 16px;background:#f5f5f5;font-size:12px;font-weight:600">SUBTOTAL</td>
+            <td style="padding:6px 16px;background:#f5f5f5;text-align:right;font-size:12px">£ ${subtotal.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 16px;font-size:12px;font-weight:600">TAX RATE</td>
+            <td style="padding:6px 16px;text-align:right;font-size:12px">20%</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 16px;background:#f5f5f5;font-size:12px;font-weight:600">TAX</td>
+            <td style="padding:6px 16px;background:#f5f5f5;text-align:right;font-size:12px">£ ${vat.toFixed(2)}</td>
+          </tr>
+          <tr style="background:#2d6a4f;color:#fff">
+            <td style="padding:8px 16px;font-size:13px;font-weight:700">TOTAL</td>
+            <td style="padding:8px 16px;text-align:right;font-size:14px;font-weight:700">£ ${total.toFixed(2)}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Bank details -->
+      <div style="font-size:12px;color:#555;border-top:1px solid #e0e0e0;padding-top:16px">
+        <strong>Bank Details:</strong> Account number: 91459996 &nbsp; Sort Code: 40-11-60<br>
+        ${notes||'Payment is due within 14 days'}
+      </div>
+    </div>`;
+}
+
+function previewInvoice(){
+  const custId = document.getElementById('inv-customer').value;
+  if(!custId||custId==='__new__'){alert('Select a customer.');return;}
+  if(invLines.length===0||invLines.some(l=>!l.description)){alert('Add at least one line item with a description.');return;}
+  const customer = customers.find(c=>c.id==custId);
+  const date = document.getElementById('inv-date').value;
+  const notes = document.getElementById('inv-notes').value;
+  const nextNum = 'INV-' + String(invoiceCounter+1).padStart(3,'0');
+  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(nextNum, customer, date, invLines, notes);
+  document.getElementById('inv-preview-overlay').style.display='block';
+}
+
+async function generateInvoice(){
+  const custId = document.getElementById('inv-customer').value;
+  if(!custId||custId==='__new__'){alert('Select a customer.');return;}
+  if(invLines.length===0||invLines.some(l=>!l.description)){alert('Add at least one line item with a description.');return;}
+  const customer = customers.find(c=>c.id==custId);
+  const date = document.getElementById('inv-date').value;
+  const notes = document.getElementById('inv-notes').value;
+  const nextNum = invoiceCounter+1;
+  const invNumber = 'INV-' + String(nextNum).padStart(3,'0');
+
+  // Increment counter in DB
+  await sb.from('invoice_counter').update({last_number: nextNum}).eq('id',1);
+  invoiceCounter = nextNum;
+  document.getElementById('inv-total').textContent = 'INV-' + String(invoiceCounter+1).padStart(3,'0');
+
+  // Show preview and print
+  document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, invLines, notes);
+  document.getElementById('inv-preview-overlay').style.display='block';
+  setTimeout(()=>printInvoice(), 300);
+}
+
+function printInvoice(){
+  const content = document.getElementById('inv-preview-content').innerHTML;
+  const win = window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Invoice</title><style>
+    body{margin:40px;font-family:Arial,sans-serif}
+    @media print{body{margin:20px}}
+  </style></head><body>${content}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),500);
 }
 
 // Check existing session on load
