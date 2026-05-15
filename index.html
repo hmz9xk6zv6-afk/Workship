@@ -565,7 +565,7 @@ async function loadVehicles(){
 
 function populateVehicleDropdown(){
   const sel=document.getElementById('job-vrn');
-  sel.innerHTML='<option value="">Select vehicle...</option>';
+  sel.innerHTML='<option value="">Select vehicle...</option><option value="__manual__">— Other (type manually) —</option>';
   vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
 }
 
