@@ -85,7 +85,30 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;background:#f5f0e8">
+  <div style="background:#fff;border-radius:16px;padding:40px;width:100%;max-width:400px;margin:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+    <div style="text-align:center;margin-bottom:32px">
+      <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.svg" alt="Workship" style="height:48px;filter:brightness(0)">
+      <div style="font-size:10px;color:#8a8278;letter-spacing:2px;text-transform:uppercase;margin-top:8px">Workshop Manager</div>
+    </div>
+    <div id="login-error" style="display:none;background:#fef2f2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px"></div>
+    <div>
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div>
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()" id="login-btn">Sign in</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" style="display:none" id="main-app">
 <div class="ws-header">
   <div>
     <div class="ws-logo">
@@ -834,9 +857,77 @@ async function savePriceItem(){
 }
 async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
 
+
+let currentUser = null;
+let userRole = null;
+
+async function doLogin(){
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.style.display='none';
+  btn.textContent='Signing in...';btn.disabled=true;
+  const {data, error} = await sb.auth.signInWithPassword({email, password});
+  if(error){
+    err.textContent=error.message;err.style.display='block';
+    btn.textContent='Sign in';btn.disabled=false;
+    return;
+  }
+  await initApp(data.user);
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  currentUser=null;userRole=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-password').value='';
+}
+
+async function initApp(user){
+  currentUser=user;
+  // Load role
+  const {data} = await sb.from('user_roles').select('*').eq('user_id', user.id).single();
+  userRole = data;
+  // Show/hide nav based on role
+  applyRoleUI();
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  // Add user info + logout to header
+  const headerRight = document.querySelector('.ws-nav').parentElement;
+  if(!document.getElementById('user-info')){
+    const userDiv = document.createElement('div');
+    userDiv.id='user-info';
+    userDiv.style='display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+    userDiv.innerHTML='<span style="font-size:11px;color:#8a8278">'+user.email+'</span><button class="btn btn-sm" onclick="doLogout()" style="color:#fff;background:transparent;border-color:#3d3a37">Sign out</button>';
+    headerRight.appendChild(userDiv);
+  }
+  loadVehicles().then(()=>loadJobs());
+  loadMOT();
+}
+
+function applyRoleUI(){
+  if(!userRole) return;
+  // Hide fleet tab for dawid
+  const navBtns = document.querySelectorAll('.ws-nav-btn');
+  navBtns.forEach(btn => {
+    const t = btn.getAttribute('onclick');
+    if(t && t.includes('fleet') && !userRole.can_view_fleet) btn.style.display='none';
+  });
+}
+
+// Check existing session on load
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session){
+    initApp(session.user);
+  } else {
+    document.getElementById('login-screen').style.display='flex';
+  }
+});
+
 setSyncStatus(false,'Connecting...');
-loadVehicles().then(()=>loadJobs());
-loadMOT();
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
   .on('postgres_changes',{event:'*',schema:'public',table:'mot_data'},()=>loadMOT())
