@@ -287,6 +287,10 @@ tr:last-child td{border-bottom:none}
         <label>Date</label>
         <input type="date" id="exp-date">
       </div>
+      <div>
+        <label>Mileage</label>
+        <input type="number" id="exp-mileage" placeholder="e.g. 45000" min="0">
+      </div>
     </div>
     <div id="exp-make-display" style="display:none;margin-top:8px;font-size:12px;color:#8a8278;padding:6px 10px;background:#f5f0e8;border-radius:6px"></div>
     <div style="margin-top:16px">
@@ -328,7 +332,7 @@ tr:last-child td{border-bottom:none}
       </select>
     </div>
     <table>
-      <thead><tr><th>Date</th><th>Vehicle</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Date</th><th>Vehicle</th><th>Mileage</th><th>Items</th><th>Subtotal</th><th>VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
       <tbody id="expenses-tbody"></tbody>
     </table>
   </div>
@@ -715,6 +719,7 @@ function resetExpenseForm(){
   document.getElementById('exp-vrn').value='';
   document.getElementById('exp-date').value='';
   document.getElementById('exp-notes').value='';
+  document.getElementById('exp-mileage').value='';
   document.getElementById('exp-manual-wrap').style.display='none';
   document.getElementById('exp-make-display').style.display='none';
   expLines=[];editingExpenseId=null;
@@ -735,12 +740,14 @@ async function saveExpense(){
   if(expLines.some(l=>l.item==='Other'&&!l.other_desc)){alert('Please describe the "Other" item.');return;}
 
   if(editingExpenseId){
-    await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value}).eq('id',editingExpenseId);
+    const mileageUpd=parseInt(document.getElementById('exp-mileage').value)||null;
+await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value,mileage:mileageUpd}).eq('id',editingExpenseId);
     await sb.from('expense_lines').delete().eq('expense_id',editingExpenseId);
     const lines=expLines.map(l=>({expense_id:editingExpenseId,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
   } else {
-    const{data:exp,error}=await sb.from('expenses').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false}]).select().single();
+    const mileage=parseInt(document.getElementById('exp-mileage').value)||null;
+const{data:exp,error}=await sb.from('expenses').insert([{reg,make,job_date:date,notes:document.getElementById('exp-notes').value,invoiced:false,mileage}]).select().single();
     if(error){alert('Error: '+error.message);return;}
     const lines=expLines.map(l=>({expense_id:exp.id,item:l.item==='Other'?'Other: '+l.other_desc:l.item,quantity:l.quantity||0,unit:l.unit||'unit',hours:l.hours||0,unit_price:l.unit_price||0,total:l.total||0}));
     await sb.from('expense_lines').insert(lines);
@@ -758,6 +765,7 @@ function editExpense(id){
   else{sel.value='__manual__';document.getElementById('exp-manual-wrap').style.display='block';document.getElementById('exp-vrn-manual').value=e.reg;}
   document.getElementById('exp-date').value=e.job_date;
   document.getElementById('exp-notes').value=e.notes||'';
+  document.getElementById('exp-mileage').value=e.mileage||'';
   expLines=(e.expense_lines||[]).map(l=>{
     const isOther=l.item.startsWith('Other: ');
     return{item:isOther?'Other':l.item,other_desc:isOther?l.item.replace('Other: ',''):'',quantity:l.quantity,unit:l.unit,hours:l.hours,unit_price:l.unit_price,total:l.total,is_labour:l.unit==='hour'};
@@ -788,6 +796,7 @@ function renderExpenses(){
     return'<tr>'
       +'<td style="font-size:12px;color:#8a8278">'+e.job_date+'</td>'
       +'<td style="font-weight:700">'+e.reg+'</td>'
+      +'<td style="color:#8a8278;font-size:12px">'+(e.mileage?e.mileage.toLocaleString()+' mi':'—')+'</td>'
       +'<td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+itemSummary+'">'+itemSummary+'</td>'
       +'<td>\u00a3'+subtotal.toFixed(2)+'</td>'
       +'<td style="color:#8a8278">\u00a3'+vat.toFixed(2)+'</td>'
