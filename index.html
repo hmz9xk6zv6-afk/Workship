@@ -122,6 +122,7 @@ tr:last-child td{border-bottom:none}
     <div class="ws-nav">
       <button class="ws-nav-btn active" onclick="showTab('schedule',this)">&#128197; Schedule</button>
       <button class="ws-nav-btn" onclick="showTab('mot',this)">&#128196; MOT</button>
+      <button class="ws-nav-btn" onclick="showTab('roadtax',this)">&#128663; Road Tax</button>
       <button class="ws-nav-btn" onclick="showTab('fleet',this)">&#128663; Fleet</button>
       <button class="ws-nav-btn" onclick="showTab('servicelog',this)">&#128200; Service Log</button>
       <button class="ws-nav-btn" id="nav-invoices" onclick="showTab('invoices',this)">&#128203; Invoices</button>
@@ -257,6 +258,51 @@ tr:last-child td{border-bottom:none}
     <p class="ws-section-label">Fleet MOT overview</p>
     <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Owner</th><th>MOT expiry</th><th>Status</th><th></th></tr></thead>
     <tbody id="mot-tbody"></tbody></table>
+  </div>
+</div>
+
+
+<!-- ROAD TAX -->
+<div id="tab-roadtax" class="tab">
+  <div class="ws-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+      <div>
+        <p class="ws-section-label" style="margin-bottom:4px">Check all fleet via DVLA</p>
+        <p style="font-size:12px;color:#8a8278">Automatically checks road tax status for every vehicle.</p>
+      </div>
+      <button class="btn btn-primary" id="check-tax-btn" onclick="checkAllTax()">&#128663; Check all fleet</button>
+    </div>
+    <div id="check-tax-progress" style="display:none;margin-top:12px">
+      <div style="font-size:12px;color:#8a8278;margin-bottom:6px" id="check-tax-status"></div>
+      <div class="progress-bar"><div class="progress-fill" id="tax-progress-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="ws-card">
+    <p class="ws-section-label">Manual check</p>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <div style="flex:1"><label>Registration</label><input type="text" id="tax-lookup" placeholder="e.g. HK71JXW" style="text-transform:uppercase"></div>
+      <button class="btn btn-primary" onclick="lookupTax()">Check</button>
+    </div>
+    <div id="tax-result" style="margin-top:12px;font-size:13px"></div>
+  </div>
+  <div class="ws-card">
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:150px">
+        <label>Filter by make</label>
+        <select id="tax-filter-make" onchange="renderTax()"><option value="">All makes</option></select>
+      </div>
+      <div style="flex:1;min-width:150px">
+        <label>Sort by</label>
+        <select id="tax-sort" onchange="renderTax()">
+          <option value="days">Days remaining (least first)</option>
+          <option value="make">Make (A–Z)</option>
+          <option value="reg">Registration (A–Z)</option>
+        </select>
+      </div>
+    </div>
+    <p class="ws-section-label">Fleet Road Tax overview</p>
+    <table><thead><tr><th>Reg</th><th>Make</th><th>Model</th><th>Owner</th><th>Tax due</th><th>Status</th><th></th></tr></thead>
+    <tbody id="tax-tbody"></tbody></table>
   </div>
 </div>
 
@@ -570,6 +616,7 @@ function showTab(t,btn){
   document.getElementById('tab-'+t).classList.add('active');btn.classList.add('active');
   if(t==='schedule')loadJobs();
   if(t==='mot'){loadVehicles();loadMOT();}
+  if(t==='roadtax'){loadVehicles();loadTaxData();}
   if(t==='fleet'){loadVehicles();renderFleet();}
   if(t==='servicelog'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
   if(t==='invoices'){loadInvoices();}
@@ -1028,7 +1075,238 @@ function applyRoleUI(){
 
 
 
+
+// ============ ROAD TAX ============
+let taxData = {};
+
+async function loadTaxData(){
+  const {data} = await sb.from('tax_data').select('*');
+  taxData = {};
+  (data||[]).forEach(r=>{taxData[r.reg]=r;});
+  renderTax();
+}
+
+async function setTax(reg, val){
+  await sb.from('tax_data').upsert({reg, status:val.taxStatus, due_date:val.taxDueDate, updated_at:new Date().toISOString()});
+  taxData[reg] = {status:val.taxStatus, due_date:val.taxDueDate};
+}
+
+async function lookupTax(){
+  const reg = document.getElementById('tax-lookup').value.trim().toUpperCase().replace(/\s/g,'');
+  if(!reg){alert('Enter a registration.');return;}
+  const el = document.getElementById('tax-result');
+  el.innerHTML='<span style="color:#8a8278">Checking DVLA...</span>';
+  try{
+    const r = await fetch('/api/tax?reg='+reg);
+    const data = await r.json();
+    if(data.error){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">Not found.</div>';return;}
+    await setTax(reg, data);
+    const today = new Date();
+    const due = new Date(data.taxDueDate);
+    const diff = Math.ceil((due-today)/864e5);
+    const col = data.taxStatus==='Taxed' ? (diff<=30?'#856404':'#0a5236') : '#dc2626';
+    el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px">
+      <p style="font-weight:700;margin-bottom:6px">${data.make||''} — ${reg}</p>
+      <p>Status: <span style="color:${col};font-weight:600">${data.taxStatus}</span></p>
+      <p>Tax due: <span style="color:${col};font-weight:600">${data.taxDueDate} (${diff<0?'expired':diff+'d'})</span></p>
+    </div>`;
+    renderTax();
+  }catch(e){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">Error: '+e.message+'</div>';}
+}
+
+async function checkAllTax(){
+  const btn = document.getElementById('check-tax-btn');
+  const prog = document.getElementById('check-tax-progress');
+  btn.disabled=true;btn.textContent='Checking...';prog.style.display='block';
+  const active = vehicles.filter(v=>v.active);
+  let done=0,found=0,notFound=0;
+  for(const v of active){
+    document.getElementById('check-tax-status').textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
+    document.getElementById('tax-progress-fill').style.width=((done/active.length)*100)+'%';
+    try{
+      const r = await fetch('/api/tax?reg='+v.reg);
+      const data = await r.json();
+      if(data.taxStatus){await setTax(v.reg, data);found++;}else{notFound++;}
+    }catch(e){notFound++;}
+    done++;await new Promise(r=>setTimeout(r,300));
+  }
+  document.getElementById('tax-progress-fill').style.width='100%';
+  document.getElementById('check-tax-status').textContent=`Done! ${found} updated, ${notFound} not found.`;
+  btn.disabled=false;btn.textContent='&#128663; Check all fleet';
+  renderTax();
+}
+
+function renderTax(){
+  const today = new Date();
+  let active = vehicles.filter(v=>v.active);
+
+  const makeFilter = document.getElementById('tax-filter-make');
+  if(makeFilter){
+    const makes = [...new Set(active.map(v=>v.make))].sort();
+    const current = makeFilter.value;
+    makeFilter.innerHTML='<option value="">All makes</option>';
+    makes.forEach(m=>makeFilter.add(new Option(m,m)));
+    if(makes.includes(current))makeFilter.value=current;
+    if(makeFilter.value)active=active.filter(v=>v.make===makeFilter.value);
+  }
+
+  const sort = document.getElementById('tax-sort')?.value||'days';
+  active = [...active].sort((a,b)=>{
+    if(sort==='make')return a.make.localeCompare(b.make);
+    if(sort==='reg')return a.reg.localeCompare(b.reg);
+    const da = taxData[a.reg]?.due_date ? Math.ceil((new Date(taxData[a.reg].due_date)-today)/864e5) : 9999;
+    const db = taxData[b.reg]?.due_date ? Math.ceil((new Date(taxData[b.reg].due_date)-today)/864e5) : 9999;
+    return da-db;
+  });
+
+  document.getElementById('tax-tbody').innerHTML = active.map(v=>{
+    const t = taxData[v.reg];
+    let s = '<span style="color:#8a8278;font-size:11px">Not checked</span>';
+    if(t){
+      if(t.status==='Taxed'){
+        const diff = Math.ceil((new Date(t.due_date)-today)/864e5);
+        s = diff<=0 ? '<span class="mot-due">&#9888; Expired</span>'
+          : diff<=30 ? `<span class="mot-due">&#9888; ${diff}d</span>`
+          : diff<=60 ? `<span class="mot-warn">&#9888; ${diff}d</span>`
+          : `<span class="mot-ok">&#10003; ${diff}d</span>`;
+      } else {
+        s = '<span class="mot-due">&#9888; '+t.status+'</span>';
+      }
+    }
+    const ownerBadge = v.owner ? `<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>` : '—';
+    return`<tr><td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
+    <td>${ownerBadge}</td><td style="color:#8a8278;font-size:12px">${t?.due_date||'—'}</td><td>${s}</td>
+    <td><button class="btn btn-sm" onclick="singleTax('${v.reg}',this)">&#8635;</button></td></tr>`;
+  }).join('');
+}
+
+async function singleTax(reg,btn){
+  btn.textContent='...';btn.disabled=true;
+  try{
+    const r = await fetch('/api/tax?reg='+reg);
+    const data = await r.json();
+    if(data.taxStatus) await setTax(reg, data);
+  }catch(e){}
+  btn.textContent='↻';btn.disabled=false;
+  renderTax();
+}
+
 // ============ INVOICES ============
+
+// ============ ROAD TAX ============
+
+async function loadTaxData(){
+  const {data} = await sb.from('tax_data').select('*');
+  taxData = {};
+  (data||[]).forEach(r=>{taxData[r.reg]=r;});
+  renderTax();
+}
+
+async function setTax(reg, val){
+  await sb.from('tax_data').upsert({reg, status:val.taxStatus, due_date:val.taxDueDate, updated_at:new Date().toISOString()});
+  taxData[reg] = {status:val.taxStatus, due_date:val.taxDueDate};
+}
+
+async function lookupTax(){
+  const reg = document.getElementById('tax-lookup').value.trim().toUpperCase().replace(/\s/g,'');
+  if(!reg){alert('Enter a registration.');return;}
+  const el = document.getElementById('tax-result');
+  el.innerHTML='<span style="color:#8a8278">Checking DVLA...</span>';
+  try{
+    const r = await fetch('/api/tax?reg='+reg);
+    const data = await r.json();
+    if(data.error){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">Not found.</div>';return;}
+    await setTax(reg, data);
+    const today = new Date();
+    const due = new Date(data.taxDueDate);
+    const diff = Math.ceil((due-today)/864e5);
+    const col = data.taxStatus==='Taxed' ? (diff<=30?'#856404':'#0a5236') : '#dc2626';
+    el.innerHTML=`<div style="padding:12px;background:#f5f0e8;border-radius:8px">
+      <p style="font-weight:700;margin-bottom:6px">${data.make||''} — ${reg}</p>
+      <p>Status: <span style="color:${col};font-weight:600">${data.taxStatus}</span></p>
+      <p>Tax due: <span style="color:${col};font-weight:600">${data.taxDueDate} (${diff<0?'expired':diff+'d'})</span></p>
+    </div>`;
+    renderTax();
+  }catch(e){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">Error: '+e.message+'</div>';}
+}
+
+async function checkAllTax(){
+  const btn = document.getElementById('check-tax-btn');
+  const prog = document.getElementById('check-tax-progress');
+  btn.disabled=true;btn.textContent='Checking...';prog.style.display='block';
+  const active = vehicles.filter(v=>v.active);
+  let done=0,found=0,notFound=0;
+  for(const v of active){
+    document.getElementById('check-tax-status').textContent=`Checking ${v.reg} (${done+1}/${active.length})...`;
+    document.getElementById('tax-progress-fill').style.width=((done/active.length)*100)+'%';
+    try{
+      const r = await fetch('/api/tax?reg='+v.reg);
+      const data = await r.json();
+      if(data.taxStatus){await setTax(v.reg, data);found++;}else{notFound++;}
+    }catch(e){notFound++;}
+    done++;await new Promise(r=>setTimeout(r,300));
+  }
+  document.getElementById('tax-progress-fill').style.width='100%';
+  document.getElementById('check-tax-status').textContent=`Done! ${found} updated, ${notFound} not found.`;
+  btn.disabled=false;btn.textContent='&#128663; Check all fleet';
+  renderTax();
+}
+
+function renderTax(){
+  const today = new Date();
+  let active = vehicles.filter(v=>v.active);
+
+  const makeFilter = document.getElementById('tax-filter-make');
+  if(makeFilter){
+    const makes = [...new Set(active.map(v=>v.make))].sort();
+    const current = makeFilter.value;
+    makeFilter.innerHTML='<option value="">All makes</option>';
+    makes.forEach(m=>makeFilter.add(new Option(m,m)));
+    if(makes.includes(current))makeFilter.value=current;
+    if(makeFilter.value)active=active.filter(v=>v.make===makeFilter.value);
+  }
+
+  const sort = document.getElementById('tax-sort')?.value||'days';
+  active = [...active].sort((a,b)=>{
+    if(sort==='make')return a.make.localeCompare(b.make);
+    if(sort==='reg')return a.reg.localeCompare(b.reg);
+    const da = taxData[a.reg]?.due_date ? Math.ceil((new Date(taxData[a.reg].due_date)-today)/864e5) : 9999;
+    const db = taxData[b.reg]?.due_date ? Math.ceil((new Date(taxData[b.reg].due_date)-today)/864e5) : 9999;
+    return da-db;
+  });
+
+  document.getElementById('tax-tbody').innerHTML = active.map(v=>{
+    const t = taxData[v.reg];
+    let s = '<span style="color:#8a8278;font-size:11px">Not checked</span>';
+    if(t){
+      if(t.status==='Taxed'){
+        const diff = Math.ceil((new Date(t.due_date)-today)/864e5);
+        s = diff<=0 ? '<span class="mot-due">&#9888; Expired</span>'
+          : diff<=30 ? `<span class="mot-due">&#9888; ${diff}d</span>`
+          : diff<=60 ? `<span class="mot-warn">&#9888; ${diff}d</span>`
+          : `<span class="mot-ok">&#10003; ${diff}d</span>`;
+      } else {
+        s = '<span class="mot-due">&#9888; '+t.status+'</span>';
+      }
+    }
+    const ownerBadge = v.owner ? `<span class="badge badge-${(v.owner||'').toLowerCase()}">${v.owner}</span>` : '—';
+    return`<tr><td style="font-weight:700">${v.reg}</td><td>${v.make}</td><td style="color:#8a8278">${v.model}</td>
+    <td>${ownerBadge}</td><td style="color:#8a8278;font-size:12px">${t?.due_date||'—'}</td><td>${s}</td>
+    <td><button class="btn btn-sm" onclick="singleTax('${v.reg}',this)">&#8635;</button></td></tr>`;
+  }).join('');
+}
+
+async function singleTax(reg,btn){
+  btn.textContent='...';btn.disabled=true;
+  try{
+    const r = await fetch('/api/tax?reg='+reg);
+    const data = await r.json();
+    if(data.taxStatus) await setTax(reg, data);
+  }catch(e){}
+  btn.textContent='↻';btn.disabled=false;
+  renderTax();
+}
+
 // ============ INVOICES ============
 let customers = [], invoiceCounter = 0, pendingExpenses = [], savedInvoices = [], editingInvoiceId = null;
 
@@ -1203,7 +1481,7 @@ function buildInvoiceHTML(invNumber, customer, date, lines, notes, status){
     ${voidBanner}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px">
       <div>
-        <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.svg" style="height:156px;margin-bottom:8px;display:block">
+        <img src="https://raw.githubusercontent.com/hmz9xk6zv6-afk/Workship/main/logo.svg" style="height:45px;margin-bottom:8px;display:block">
         <div style="font-size:12px;color:#555;line-height:1.8">156 Viglen House<br>Alperton Lane<br>London<br>HA0 1HD<br><strong>Reg number:</strong> 13232524<br><strong>Vat Number:</strong> 461679757</div>
       </div>
       <div style="text-align:right">
