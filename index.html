@@ -11,7 +11,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;color:#1e1c1b;background:#f5f0e8;min-height:100vh}
 .app{max-width:1300px;margin:0 auto;padding:16px}
 .ws-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;background:var(--ws-black);border-radius:12px;margin-bottom:12px;flex-wrap:wrap;gap:10px}
-.ws-logo img{height:102px;filter:invert(1)}
+.ws-logo img{height:60px;filter:invert(1)}
 .ws-tagline{font-size:10px;color:var(--ws-muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
 .ws-sync{font-size:11px;padding:4px 10px;border-radius:20px;background:#3d3a37;color:#aaa;font-weight:600}
 .ws-sync.ok{background:#0a5236;color:#6ee7b7}
@@ -169,7 +169,13 @@ tr:last-child td{border-bottom:none}
   <div class="ws-card">
     <p class="ws-section-label">Add new job</p>
     <div class="form-row">
-      <div><label>Vehicle</label><select id="job-vrn"><option value="">Select vehicle...</option></select></div>
+      <div>
+        <label>Vehicle</label>
+        <select id="job-vrn" onchange="onJobVehicleChange()"><option value="">Select vehicle...</option></select>
+        <div id="job-vrn-manual-wrap" style="display:none;margin-top:6px">
+          <input type="text" id="job-vrn-manual" placeholder="e.g. AB12CDE" style="text-transform:uppercase">
+        </div>
+      </div>
       <div><label>Date</label><input type="date" id="job-date"></div>
     </div>
     <div class="form-row3">
@@ -598,6 +604,13 @@ async function loadPriceList(){
   priceList=data||[];renderPriceList();
 }
 
+function onJobVehicleChange(){
+  const val=document.getElementById('job-vrn').value;
+  const wrap=document.getElementById('job-vrn-manual-wrap');
+  if(val==='__manual__') wrap.style.display='block';
+  else wrap.style.display='none';
+}
+
 function checkNotesRequired(){
   const type=document.getElementById('job-type').value;
   const req=document.getElementById('notes-required');
@@ -700,10 +713,16 @@ function renderJobsTable(){
 
 function prefillDate(date,slot){document.getElementById('job-date').value=date;document.getElementById('job-start').value=slot;}
 async function addJob(){
-  const reg=document.getElementById('job-vrn').value,date=document.getElementById('job-date').value;
+  const selVal=document.getElementById('job-vrn').value;
+  const date=document.getElementById('job-date').value;
   const type=document.getElementById('job-type').value;
   const notes=document.getElementById('job-notes').value.trim();
-  if(!reg||!date){alert('Select vehicle and date.');return;}
+  let reg=selVal;
+  if(selVal==='__manual__'){
+    reg=document.getElementById('job-vrn-manual').value.trim().toUpperCase();
+    if(!reg){alert('Enter registration number.');return;}
+  }
+  if(!selVal||!date){alert('Select vehicle and date.');return;}
   if(type==='Other'&&!notes){alert('Please add notes when selecting "Other".');document.getElementById('job-notes').focus();return;}
   const job={id:Date.now().toString(),reg,date,slot:document.getElementById('job-start').value,hours:parseInt(document.getElementById('job-hours').value)||1,type,assigned:document.getElementById('job-assigned').value,notes,status:'pending'};
   const{error}=await sb.from('jobs').insert([job]);
