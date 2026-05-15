@@ -454,7 +454,7 @@ tr:last-child td{border-bottom:none}
       <input type="text" id="inv-notes" placeholder="e.g. Payment is due within 14 days" value="Payment is due within 14 days">
     </div>
     <div style="margin-top:14px;display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="generateInvoice()">&#128203; Generate PDF</button>
+      <button class="btn btn-primary" id="inv-generate-btn" onclick="generateInvoice()">&#128203; Generate PDF</button>
       <button class="btn" onclick="previewInvoice()">Preview</button>
     </div>
   </div>
@@ -1333,9 +1333,8 @@ function editInvoice(id){
   document.getElementById('inv-records-section').style.display='none';
 
   // Show edit mode indicator
-  const saveBtn = document.querySelector('[onclick="generateInvoice()"]');
-  if(saveBtn) saveBtn.textContent = 'Update invoice';
-  saveBtn.onclick = saveEditedInvoice;
+  const saveBtn = document.getElementById('inv-generate-btn');
+  if(saveBtn){saveBtn.textContent='Update invoice';saveBtn.setAttribute('onclick','saveEditedInvoice()');}
 
   document.getElementById('tab-invoices').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
@@ -1361,8 +1360,8 @@ async function saveEditedInvoice(){
 
   // Reset form
   editingInvoiceId = null;
-  const saveBtn = document.querySelector('[onclick="saveEditedInvoice()"]')||document.querySelector('button[onclick*="Invoice"]');
-  if(saveBtn){saveBtn.textContent='ኂ03 Generate PDF';saveBtn.onclick=generateInvoice;}
+  const saveBtn = document.getElementById('inv-generate-btn');
+  if(saveBtn){saveBtn.textContent='ኂ03 Generate PDF';saveBtn.setAttribute('onclick','generateInvoice()');}
   alert('Invoice updated!');
 }
 
@@ -1402,7 +1401,7 @@ function renderSavedInvoices(){
 function printInvoice(){
   const content = document.getElementById('inv-preview-content').innerHTML;
   const win = window.open('','_blank');
-  win.document.write('<!DOCTYPE html><html><head><title>Invoice</title><style>body{margin:40px;font-family:Arial,sans-serif}@media print{body{margin:20px}}</style></head><body>'+content+'</body></html>');
+  win.document.write('<!DOCTYPE html><html><head><title>Invoice</title><style>body{margin:40px;font-family:Arial,sans-serif}@media print{body{margin:20px}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}</style></head><body>'+content+'</body></html>');
   win.document.close();
   win.focus();
   setTimeout(()=>win.print(),500);
