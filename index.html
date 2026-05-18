@@ -741,6 +741,7 @@ function renderJobsTable(){
     <td style="display:flex;gap:4px;flex-wrap:wrap">
       ${j.status==='pending'?`<button class="btn btn-sm" onclick="setStatus('${j.id}','inprogress')">Start</button>`:''}
       ${j.status==='inprogress'?`<button class="btn btn-sm btn-primary" onclick="setStatus('${j.id}','done')">Done</button>`:''}
+      <button class="btn btn-sm" onclick="openModal('${j.id}')">Edit</button>
       <button class="btn btn-sm btn-danger" onclick="removeJob('${j.id}')">\u2715</button>
     </td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:20px;color:#8a8278">No jobs yet</td></tr>';
 }
