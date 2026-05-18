@@ -138,6 +138,7 @@ tr:last-child td{border-bottom:none}
     <div class="modal-actions">
       <button class="btn btn-sm" id="modal-start-btn" style="display:none" onclick="modalSetStatus('inprogress')">Start</button>
       <button class="btn btn-sm btn-primary" id="modal-done-btn" style="display:none" onclick="modalSetStatus('done')">Done</button>
+      <button class="btn btn-sm btn-primary" onclick="saveJobEdits().then(()=>{closeModal();loadJobs();})">Save</button>
       <button class="btn btn-sm btn-danger" onclick="modalDelete()">Delete</button>
       <button class="btn btn-sm" onclick="closeModal()">Close</button>
     </div>
@@ -678,21 +679,54 @@ function openModal(id){
   const j=jobs.find(j=>j.id===id);if(!j)return;
   modalJobId=id;
   const v=vehicles.find(v=>v.reg===j.reg)||{make:'?',model:'?'};
-  document.getElementById('modal-title').textContent=`${j.reg} \u2014 ${j.type}`;
+  document.getElementById('modal-title').textContent=`${j.reg} — ${j.type}`;
+
+  const timeOpts=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(t=>`<option value="${t}" ${j.slot===t?'selected':''}>${t}</option>`).join('');
+  const durOpts=[1,2,3,4,5,6,7,8].map(h=>`<option value="${h}" ${(j.hours||1)==h?'selected':''}>${h} hour${h>1?'s':''}</option>`).join('');
+  const typeOpts=['Service','MOT prep','Tyres','Inspection','Cleaning','Full Valeting','Brake change','Suspension Change','Diagnostic','Other'].map(t=>`<option value="${t}" ${j.type===t?'selected':''}>${t}</option>`).join('');
+  const assignOpts=['Peter','Dawid','Other'].map(a=>`<option value="${a}" ${j.assigned===a?'selected':''}>${a}</option>`).join('');
+
   document.getElementById('modal-body').innerHTML=`
-    <div class="modal-row"><span class="modal-label">Date</span><span>${j.date}</span></div>
-    <div class="modal-row"><span class="modal-label">Time</span><span>${j.slot} (${j.hours||1}h)</span></div>
-    <div class="modal-row"><span class="modal-label">Vehicle</span><span>${v.make} ${v.model}</span></div>
-    <div class="modal-row"><span class="modal-label">Assigned</span><span>${j.assigned||'\u2014'}</span></div>
-    <div class="modal-row"><span class="modal-label">Status</span><span><span class="badge badge-${j.status}">${j.status}</span></span></div>
-    ${j.notes?`<div class="modal-row"><span class="modal-label">Notes</span><span style="max-width:280px;text-align:right">${j.notes}</span></div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Date</label>
+        <input type="date" id="edit-job-date" value="${j.date}" style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px"></div>
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Start time</label>
+        <select id="edit-job-slot" style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px">${timeOpts}</select></div>
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Duration</label>
+        <select id="edit-job-hours" style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px">${durOpts}</select></div>
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Job type</label>
+        <select id="edit-job-type" style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px">${typeOpts}</select></div>
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Assigned to</label>
+        <select id="edit-job-assigned" style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px">${assignOpts}</select></div>
+      <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Status</label>
+        <span class="badge badge-${j.status}" style="margin-top:8px;display:inline-block">${j.status}</span></div>
+    </div>
+    <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Notes</label>
+      <input type="text" id="edit-job-notes" value="${j.notes||''}" placeholder="Optional..." style="width:100%;padding:8px 10px;border:0.5px solid rgba(0,0,0,0.2);border-radius:8px;font-size:13px"></div>
   `;
   document.getElementById('modal-start-btn').style.display=j.status==='pending'?'block':'none';
   document.getElementById('modal-done-btn').style.display=j.status==='inprogress'?'block':'none';
   document.getElementById('job-modal').classList.add('open');
 }
 function closeModal(){document.getElementById('job-modal').classList.remove('open');modalJobId=null;}
-async function modalSetStatus(s){if(!modalJobId)return;await sb.from('jobs').update({status:s}).eq('id',modalJobId);closeModal();loadJobs();}
+
+async function saveJobEdits(){
+  if(!modalJobId)return;
+  const date=document.getElementById('edit-job-date')?.value;
+  const slot=document.getElementById('edit-job-slot')?.value;
+  const hours=document.getElementById('edit-job-hours')?.value;
+  const type=document.getElementById('edit-job-type')?.value;
+  const assigned=document.getElementById('edit-job-assigned')?.value;
+  const notes=document.getElementById('edit-job-notes')?.value;
+  if(!date)return;
+  await sb.from('jobs').update({date,slot,hours:parseInt(hours),type,assigned,notes}).eq('id',modalJobId);
+}
+async function modalSetStatus(s){
+  if(!modalJobId)return;
+  await saveJobEdits();
+  await sb.from('jobs').update({status:s}).eq('id',modalJobId);
+  closeModal();loadJobs();
+}
 async function modalDelete(){if(!modalJobId)return;if(!confirm('Delete this job?'))return;await sb.from('jobs').delete().eq('id',modalJobId);closeModal();loadJobs();}
 
 function renderJobsTable(){
