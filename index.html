@@ -1634,7 +1634,7 @@ async function generateInvoice(){
   await sb.from('invoice_lines').insert(lines.map(l=>({invoice_id:inv.id, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total})));
 
   // Increment counter
-  await sb.from('invoice_counter').update({last_number: nextNum}).eq('id',1);
+  await sb.from('invoice_counter').upsert({id: 1, last_number: nextNum});
   invoiceCounter = nextNum;
 
   // Mark expenses as invoiced
