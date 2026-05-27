@@ -268,6 +268,7 @@ tr:last-child td{border-bottom:none}
   </div>
 </div>
 
+
 <!-- ROAD TAX -->
 <div id="tab-roadtax" class="tab">
   <div class="ws-card">
@@ -449,8 +450,9 @@ tr:last-child td{border-bottom:none}
     <div class="ws-metric"><div class="ws-metric-label">Customers</div><div class="ws-metric-value" id="inv-customers">—</div></div>
   </div>
 
+  <!-- CREATE INVOICE FROM SERVICE LOG -->
   <div class="ws-card">
-    <p class="ws-section-label" id="inv-form-title">Create invoice from Service Log</p>
+    <p class="ws-section-label">Create invoice from Service Log</p>
     <div class="form-row">
       <div>
         <label>Customer</label>
@@ -491,6 +493,7 @@ tr:last-child td{border-bottom:none}
 
     <div id="inv-customer-preview" style="display:none;margin-top:8px;padding:10px 14px;background:#f5f0e8;border-radius:8px;font-size:12px;color:#1e1c1b;line-height:1.8"></div>
 
+    <!-- SELECT SERVICE LOG RECORDS -->
     <div id="inv-records-section" style="display:none;margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <p class="ws-section-label" style="margin:0">Select jobs to include</p>
@@ -506,10 +509,10 @@ tr:last-child td{border-bottom:none}
     <div style="margin-top:14px;display:flex;gap:8px">
       <button class="btn btn-primary" id="inv-generate-btn" onclick="generateInvoice()">&#128203; Generate PDF</button>
       <button class="btn" onclick="previewInvoice()">Preview</button>
-      <button class="btn" id="inv-cancel-edit-btn" style="display:none" onclick="cancelInvoiceEdit()">Cancel edit</button>
     </div>
   </div>
 
+  <!-- SAVED INVOICES -->
   <div class="ws-card">
     <p class="ws-section-label">Invoice history</p>
     <table>
@@ -518,6 +521,7 @@ tr:last-child td{border-bottom:none}
     </table>
   </div>
 
+  <!-- CUSTOMERS -->
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
       <p class="ws-section-label" style="margin:0">Customers</p>
@@ -529,6 +533,7 @@ tr:last-child td{border-bottom:none}
     </table>
   </div>
 
+  <!-- INVOICE PREVIEW MODAL -->
   <div id="inv-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;overflow-y:auto;padding:20px">
     <div style="max-width:800px;margin:0 auto">
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
@@ -675,10 +680,12 @@ function openModal(id){
   modalJobId=id;
   const v=vehicles.find(v=>v.reg===j.reg)||{make:'?',model:'?'};
   document.getElementById('modal-title').textContent=`${j.reg} — ${j.type}`;
+
   const timeOpts=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(t=>`<option value="${t}" ${j.slot===t?'selected':''}>${t}</option>`).join('');
   const durOpts=[1,2,3,4,5,6,7,8].map(h=>`<option value="${h}" ${(j.hours||1)==h?'selected':''}>${h} hour${h>1?'s':''}</option>`).join('');
   const typeOpts=['Service','MOT prep','Tyres','Inspection','Cleaning','Full Valeting','Brake change','Suspension Change','Diagnostic','Other'].map(t=>`<option value="${t}" ${j.type===t?'selected':''}>${t}</option>`).join('');
   const assignOpts=['Peter','Dawid','Other'].map(a=>`<option value="${a}" ${j.assigned===a?'selected':''}>${a}</option>`).join('');
+
   document.getElementById('modal-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Date</label>
@@ -909,8 +916,11 @@ function updateExpTotal(){
 }
 
 function renderExpLines(){
-  const COMMON_ITEMS=['Labour','Diagnostic','Engine Oil','Oil Filter','Air Filter','Fuel Filter','Cabin Filter',
-    'Brake Pads Front','Brake Pads Rear','Brake Discs Front','Brake Discs Rear','Bulbs','Tyres','Full Valeting','Other'];
+  // FIX: dynamically build item list from priceList (loaded from DB), with Other always last
+  const COMMON_ITEMS=[
+    ...priceList.map(p=>p.item),
+    'Other'
+  ];
   const container=document.getElementById('exp-lines');
   if(!container)return;
   if(expLines.length===0){
@@ -1057,6 +1067,7 @@ async function savePriceItem(){
   loadPriceList();
 }
 async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
+
 
 let currentUser = null;
 let userRole = null;
@@ -1234,14 +1245,10 @@ let customers = [], invoiceCounter = 0, pendingExpenses = [], savedInvoices = []
 async function loadInvoices(){
   const {data: cust} = await sb.from('customers').select('*').order('name');
   customers = cust || [];
-
-  // FIX: read counter fresh from DB every time
   const {data: counter} = await sb.from('invoice_counter').select('*').single();
   invoiceCounter = counter ? counter.last_number : 0;
-
   const {data: pending} = await sb.from('expenses').select('*, expense_lines(*)').eq('invoiced', false).order('job_date', {ascending: false});
   pendingExpenses = pending || [];
-
   const {data: invs} = await sb.from('invoices').select('*, invoice_lines(*)').order('created_at', {ascending: false});
   savedInvoices = invs || [];
 
@@ -1279,8 +1286,7 @@ function onInvCustomerChange(){
       preview.style.display = 'block';
       preview.innerHTML = '<strong>'+c.name+'</strong><br>'+(c.address||'')+'<br>'+(c.city||'')+' '+(c.postcode||'')+(c.email?'<br>'+c.email:'');
     }
-    // Always show records section when customer selected
-    recordsSection.style.display = 'block';
+    recordsSection.style.display = editingInvoiceId ? 'none' : 'block';
   } else {
     preview.style.display = 'none';
     newForm.style.display = 'none';
@@ -1469,23 +1475,12 @@ function previewInvoice(){
     if(selected.length===0){alert('Select at least one job from Service Log.');return;}
     lines = buildInvoiceLines(selected);
   }
-  const invNumber = editingInvoiceId
-    ? savedInvoices.find(i=>i.id===editingInvoiceId).invoice_number
-    : 'INV-' + String(invoiceCounter+1).padStart(3,'0');
+  const invNumber = editingInvoiceId ? savedInvoices.find(i=>i.id===editingInvoiceId).invoice_number : 'INV-' + String(invoiceCounter+1).padStart(3,'0');
   document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, lines, notes, 'active');
   document.getElementById('inv-preview-overlay').style.display='block';
 }
 
-// =============================================
-// FIX: generateInvoice routes to edit if editing
-// =============================================
 async function generateInvoice(){
-  // If in edit mode, save edits instead of creating new invoice
-  if(editingInvoiceId){
-    await saveEditedInvoice();
-    return;
-  }
-
   const custId = document.getElementById('inv-customer').value;
   if(!custId||custId==='__new__'){alert('Select a customer.');return;}
   const selected = getSelectedExpenses();
@@ -1493,13 +1488,8 @@ async function generateInvoice(){
   const customer = customers.find(c=>c.id==custId);
   const date = document.getElementById('inv-date').value;
   const notes = document.getElementById('inv-notes').value;
-
-  // FIX: always read fresh counter from DB before generating
-  const {data: counterRow} = await sb.from('invoice_counter').select('*').single();
-  const currentCounter = counterRow ? counterRow.last_number : 0;
-  const nextNum = currentCounter + 1;
+  const nextNum = invoiceCounter+1;
   const invNumber = 'INV-' + String(nextNum).padStart(3,'0');
-
   const lines = buildInvoiceLines(selected);
   const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
   const vat = subtotal*0.2;
@@ -1517,12 +1507,8 @@ async function generateInvoice(){
   }]).select().single();
   if(error){alert('Error saving invoice: '+error.message);return;}
 
-  await sb.from('invoice_lines').insert(lines.map(l=>({
-    invoice_id:inv.id, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total
-  })));
-
-  // FIX: use upsert so row is created if it doesn't exist
-  await sb.from('invoice_counter').upsert({id: 1, last_number: nextNum});
+  await sb.from('invoice_lines').insert(lines.map(l=>({invoice_id:inv.id, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total})));
+  await sb.from('invoice_counter').update({last_number: nextNum}).eq('id',1);
   invoiceCounter = nextNum;
 
   const ids = selected.map(e=>e.id);
@@ -1541,36 +1527,10 @@ async function generateInvoice(){
   setTimeout(()=>printInvoice(), 400);
 }
 
-function cancelInvoiceEdit(){
-  editingInvoiceId = null;
-  // Reset form title and button
-  document.getElementById('inv-form-title').textContent = 'Create invoice from Service Log';
-  const btn = document.getElementById('inv-generate-btn');
-  btn.textContent = '📋 Generate PDF';
-  document.getElementById('inv-cancel-edit-btn').style.display = 'none';
-  // Reset form fields
-  document.getElementById('inv-customer').value = '';
-  document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
-  document.getElementById('inv-notes').value = 'Payment is due within 14 days';
-  document.getElementById('inv-customer-preview').style.display = 'none';
-  document.getElementById('inv-records-section').style.display = 'none';
-  // Remove existing lines div if present
-  const existing = document.getElementById('inv-existing-lines');
-  if(existing) existing.remove();
-  renderInvRecords();
-}
-
 function editInvoice(id){
   const inv = savedInvoices.find(i=>i.id===id);
   if(!inv)return;
   editingInvoiceId = id;
-
-  // Update form title and button
-  document.getElementById('inv-form-title').textContent = 'Edit invoice ' + inv.invoice_number;
-  const btn = document.getElementById('inv-generate-btn');
-  btn.textContent = '💾 Save changes';
-  document.getElementById('inv-cancel-edit-btn').style.display = 'inline-block';
-
   document.getElementById('inv-customer').value = inv.customer_id;
   onInvCustomerChange();
   document.getElementById('inv-date').value = inv.invoice_date;
@@ -1579,27 +1539,26 @@ function editInvoice(id){
   const recordsSection = document.getElementById('inv-records-section');
   recordsSection.style.display = 'block';
 
-  // Remove old existing lines div if present, then recreate
-  const oldDiv = document.getElementById('inv-existing-lines');
-  if(oldDiv) oldDiv.remove();
-
-  const existingLinesDiv = document.createElement('div');
-  existingLinesDiv.id = 'inv-existing-lines';
-  recordsSection.insertBefore(existingLinesDiv, recordsSection.firstChild);
+  const existingLinesDiv = document.getElementById('inv-existing-lines') || (() => {
+    const d = document.createElement('div');
+    d.id = 'inv-existing-lines';
+    recordsSection.insertBefore(d, recordsSection.firstChild);
+    return d;
+  })();
 
   const invLines = inv.invoice_lines || [];
-  existingLinesDiv.innerHTML = invLines.length
-    ? '<p class="ws-section-label" style="margin:8px 0 6px">Current invoice lines</p>'
-      + invLines.map((l,i) =>
-        '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff3cd;border-radius:8px;margin-bottom:4px;font-size:12px">'
-        +'<span style="flex:1">'+l.description+'</span>'
-        +'<span style="color:#8a8278">x'+l.qty+'</span>'
-        +'<span style="font-weight:600">£'+(l.total||0).toFixed(2)+'</span>'
-        +'<button class="btn btn-sm btn-danger" onclick="removeInvLine('+inv.id+','+l.id+',this)">×</button>'
-        +'</div>').join('')
-      + '<div style="height:1px;background:rgba(0,0,0,0.1);margin:10px 0"></div>'
-      + '<p class="ws-section-label" style="margin:0 0 6px">Add more jobs (optional)</p>'
+  existingLinesDiv.innerHTML = invLines.length ? '<p class="ws-section-label" style="margin:8px 0 6px">Current invoice lines</p>'
+    + invLines.map((l,i) => '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff3cd;border-radius:8px;margin-bottom:4px;font-size:12px">'
+      +'<span style="flex:1">'+l.description+'</span>'
+      +'<span style="color:#8a8278">x'+l.qty+'</span>'
+      +'<span style="font-weight:600">£'+(l.total||0).toFixed(2)+'</span>'
+      +'<button class="btn btn-sm btn-danger" onclick="removeInvLine('+inv.id+','+l.id+',this)">×</button>'
+      +'</div>').join('')
+    + '<div style="height:1px;background:rgba(0,0,0,0.1);margin:10px 0"></div><p class="ws-section-label" style="margin:0 0 6px">Add more jobs</p>'
     : '';
+
+  const saveBtn = document.getElementById('inv-generate-btn');
+  if(saveBtn){saveBtn.textContent='Update invoice';saveBtn.setAttribute('onclick','saveEditedInvoice()');}
 
   document.getElementById('tab-invoices').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
@@ -1627,47 +1586,21 @@ async function saveEditedInvoice(){
   const date = document.getElementById('inv-date').value;
   const notes = document.getElementById('inv-notes').value;
 
-  // Also add any newly selected pending jobs to the invoice
-  const selected = getSelectedExpenses();
-  if(selected.length > 0){
-    const newLines = buildInvoiceLines(selected);
-    await sb.from('invoice_lines').insert(newLines.map(l=>({
-      invoice_id: editingInvoiceId, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total
-    })));
-    // Mark those expenses as invoiced
-    await sb.from('expenses').update({invoiced:true}).in('id', selected.map(e=>e.id));
-    pendingExpenses = pendingExpenses.filter(e=>!selected.map(e=>e.id).includes(e.id));
-  }
-
-  // Recalc total from all lines
-  const {data: allLines} = await sb.from('invoice_lines').select('*').eq('invoice_id', editingInvoiceId);
-  const subtotal = (allLines||[]).reduce((a,l)=>a+(l.total||0),0);
-  const vat = subtotal*0.2;
-
   await sb.from('invoices').update({
     customer_id: parseInt(custId),
     customer_name: customer.name,
     invoice_date: date,
-    notes,
-    subtotal,
-    vat,
-    total: subtotal+vat
+    notes
   }).eq('id', editingInvoiceId);
 
-  // Update local copy
   const inv = savedInvoices.find(i=>i.id===editingInvoiceId);
-  if(inv){
-    inv.customer_id=parseInt(custId);
-    inv.customer_name=customer.name;
-    inv.invoice_date=date;
-    inv.notes=notes;
-    inv.invoice_lines=allLines||[];
-    inv.subtotal=subtotal;inv.vat=vat;inv.total=subtotal+vat;
-  }
-
+  if(inv){inv.customer_id=parseInt(custId);inv.customer_name=customer.name;inv.invoice_date=date;inv.notes=notes;}
   renderSavedInvoices();
-  cancelInvoiceEdit();
-  alert('Invoice updated successfully!');
+
+  editingInvoiceId = null;
+  const saveBtn = document.getElementById('inv-generate-btn');
+  if(saveBtn){saveBtn.textContent='&#128203; Generate PDF';saveBtn.setAttribute('onclick','generateInvoice()');}
+  alert('Invoice updated!');
 }
 
 async function voidInvoice(id){
@@ -1710,6 +1643,7 @@ function printInvoice(){
   const invNum = meta ? meta.dataset.number : 'Invoice';
   const invDate = meta ? meta.dataset.date.replace(/\./g,'-') : '';
   const filename = [custName, invNum, invDate].filter(Boolean).join('_');
+
   const win = window.open('','_blank');
   win.document.write('<!DOCTYPE html><html><head><title>'+filename+'</title><style>body{margin:30px;font-family:Arial,sans-serif}@media print{@page{size:A4 portrait;margin:15mm}body{margin:0}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}</style></head><body>'+content+'</body></html>');
   win.document.close();
