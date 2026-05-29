@@ -1658,8 +1658,6 @@ async function toggleInvAccounted(id){
 }
 
 function printInvoice(){
-// ... zvyšok ostáva rovnaký
-function printInvoice(){
   const content = document.getElementById('inv-preview-content').innerHTML;
   const meta = document.getElementById('inv-meta');
   const custName = meta ? meta.dataset.customer.replace(/[^a-zA-Z0-9 ]/g,'').trim() : 'Customer';
