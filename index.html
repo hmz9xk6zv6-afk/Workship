@@ -1639,7 +1639,26 @@ function renderSavedInvoices(){
     </td>
   </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#8a8278">No invoices yet</td></tr>';
 }
+async function toggleInvSent(id){
+  const inv = savedInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  const newVal = !inv.sent;
+  await sb.from('invoices').update({sent: newVal}).eq('id',id);
+  inv.sent = newVal;
+  renderSavedInvoices();
+}
 
+async function toggleInvAccounted(id){
+  const inv = savedInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  const newVal = !inv.accounted;
+  await sb.from('invoices').update({accounted: newVal}).eq('id',id);
+  inv.accounted = newVal;
+  renderSavedInvoices();
+}
+
+function printInvoice(){
+// ... zvyšok ostáva rovnaký
 function printInvoice(){
   const content = document.getElementById('inv-preview-content').innerHTML;
   const meta = document.getElementById('inv-meta');
