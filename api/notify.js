@@ -23,24 +23,16 @@ module.exports = async function handler(req, res) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dow = today.getDay();
+    const dow = today.getDay(); // 0=Sun, 1=Mon, 6=Sat
 
     const isWeekend = (d) => d === 0 || d === 6;
-
-    // Range-based: alert if diff is WITHIN the threshold window
-    // On Monday, also catch Saturday and Sunday misses
-    const inRange = (diff, min, max) => {
-      if (diff >= min && diff <= max) return true;
-      // Monday: catch weekend misses for the lower bound
-      if (dow === 1 && diff >= min - 2 && diff < min) return true;
-      return false;
-    };
 
     const motAlerts = { critical: [], warning: [], upcoming: [] };
     const taxAlerts = { critical: [], warning: [], upcoming: [] };
 
     if (!isWeekend(dow)) {
       for (const v of vehicles) {
+
         // --- MOT ---
         const mot = motData.find(m => m.reg === v.reg);
         if (mot && mot.expiry) {
@@ -48,9 +40,9 @@ module.exports = async function handler(req, res) {
           expiry.setHours(0, 0, 0, 0);
           const diff = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
 
-          if (diff <= 14)        motAlerts.critical.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
-          else if (diff <= 30)   motAlerts.warning.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
-          else if (diff <= 50)   motAlerts.upcoming.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
+          if (diff <= 14)                   motAlerts.critical.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
+          else if (dow === 1 && diff <= 30) motAlerts.warning.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
+          else if (dow === 1 && diff <= 50) motAlerts.upcoming.push({ ...v, expiry: mot.expiry, diff, type: 'MOT' });
         }
 
         // --- Road Tax ---
@@ -60,9 +52,9 @@ module.exports = async function handler(req, res) {
           due.setHours(0, 0, 0, 0);
           const diff = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
 
-          if (diff <= 14)        taxAlerts.critical.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
-          else if (diff <= 30)   taxAlerts.warning.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
-          else if (diff <= 50)   taxAlerts.upcoming.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
+          if (diff <= 14)                   taxAlerts.critical.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
+          else if (dow === 1 && diff <= 30) taxAlerts.warning.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
+          else if (dow === 1 && diff <= 50) taxAlerts.upcoming.push({ ...v, expiry: tax.due_date, diff, type: 'Road Tax' });
         }
       }
     }
@@ -86,13 +78,9 @@ module.exports = async function handler(req, res) {
         </td>
         <td style="padding:10px 16px;border-bottom:1px solid #f0ede8;color:#1e1c1b;font-weight:600">${v.expiry}</td>
         <td style="padding:10px 16px;border-bottom:1px solid #f0ede8;color:#8a8278;font-size:12px">${v.owner || '—'}</td>
-        <td style="padding:10px 16px;border-bottom:1px solid #f0ede8;color:#8a8278;font-size:12px">${v.type}</td>
       </tr>`;
 
     const buildSection = (title, alerts) => {
-      if (allMOT.length === 0 && title === 'MOT') return '';
-      if (allTax.length === 0 && title === 'Road Tax') return '';
-
       const rows = [
         ...alerts.critical.map(v => buildRow(v, '#dc2626', `⚠ ${v.diff}d — CRITICAL`)),
         ...alerts.warning.map(v => buildRow(v, '#d97706', `${v.diff}d — Warning`)),
@@ -102,17 +90,16 @@ module.exports = async function handler(req, res) {
       if (!rows) return '';
 
       return `
-        <div style="margin-bottom:8px;padding:4px 16px;background:#f5f0e8">
-          <span style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a8278">${title}</span>
+        <div style="margin-bottom:4px;padding:6px 16px;background:#f5f0e8;border-radius:4px">
+          <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8a8278">${title}</span>
         </div>
-        <table style="width:100%;border-collapse:collapse">
+        <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
           <thead>
             <tr style="background:#f5f0e8">
               <th style="text-align:left;padding:8px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Vehicle</th>
               <th style="text-align:left;padding:8px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Alert</th>
               <th style="text-align:left;padding:8px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Expiry date</th>
               <th style="text-align:left;padding:8px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Owner</th>
-              <th style="text-align:left;padding:8px 16px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#8a8278">Check type</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -121,12 +108,17 @@ module.exports = async function handler(req, res) {
 
     const criticalCount = motAlerts.critical.length + taxAlerts.critical.length;
     const warningCount = motAlerts.warning.length + taxAlerts.warning.length;
+    const isMonday = dow === 1;
 
     const subject = criticalCount > 0
-      ? `⚠ CRITICAL Alert — ${criticalCount} vehicle(s) expiring within 14 days`
-      : warningCount > 0
-      ? `Alert — ${warningCount} vehicle(s) due within 30 days`
-      : `Reminder — vehicles due within 50 days`;
+      ? `⚠ CRITICAL — ${criticalCount} vehicle(s) expiring within 14 days`
+      : isMonday && warningCount > 0
+      ? `Weekly summary — ${allAlerts.length} vehicle(s) need attention`
+      : `Weekly summary — ${allAlerts.length} vehicle(s) coming up`;
+
+    const introText = criticalCount > 0 && !isMonday
+      ? 'The following vehicles are expiring within 14 days and require immediate attention.'
+      : 'Weekly fleet summary. Here is everything coming up in the next 50 days.';
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8"></head>
@@ -136,12 +128,13 @@ module.exports = async function handler(req, res) {
       <div style="font-size:24px;font-weight:900;color:#fff;font-family:Arial Black,Arial;text-transform:uppercase">
         WORK<span style="color:#e8a020">SHIP</span>
       </div>
-      <div style="font-size:11px;color:#8a8278;letter-spacing:1px;text-transform:uppercase;margin-top:4px">Daily Alert &mdash; ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      <div style="font-size:11px;color:#8a8278;letter-spacing:1px;text-transform:uppercase;margin-top:4px">
+        ${isMonday ? 'Weekly Summary' : 'Critical Alert'} &mdash; ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </div>
     </div>
     <div style="padding:24px 32px">
-      <p style="font-size:15px;color:#1e1c1b;margin-bottom:20px">The following vehicles require attention. Please arrange renewals as soon as possible.</p>
+      <p style="font-size:15px;color:#1e1c1b;margin-bottom:20px">${introText}</p>
       ${buildSection('MOT', motAlerts)}
-      ${allMOT.length > 0 && allTax.length > 0 ? '<div style="height:16px"></div>' : ''}
       ${buildSection('Road Tax', taxAlerts)}
     </div>
     <div style="padding:16px 32px;background:#f5f0e8;font-size:11px;color:#8a8278">
