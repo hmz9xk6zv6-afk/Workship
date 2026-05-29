@@ -1628,7 +1628,11 @@ function renderSavedInvoices(){
     <td style="font-weight:600">${inv.customer_name}</td>
     <td style="color:#8a8278;font-size:12px">${inv.invoice_date}</td>
     <td style="font-weight:700">£${(inv.total||0).toFixed(2)}</td>
-    <td><span class="badge ${inv.status==='void'?'badge-pending':'badge-done'}">${inv.status}</span></td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap">
+  <span class="badge ${inv.status==='void'?'badge-pending':'badge-done'}">${inv.status}</span>
+  ${inv.status!=='void' ? `<span class="badge ${inv.sent?'badge-done':'badge-pending'}" style="cursor:pointer" onclick="toggleInvSent(${inv.id})" title="Klikni pre zmenu">${inv.sent?'✓ Sent':'Not sent'}</span>` : ''}
+  ${inv.status!=='void' ? `<span class="badge ${inv.accounted?'badge-inprogress':'badge-pending'}" style="cursor:pointer" onclick="toggleInvAccounted(${inv.id})" title="Klikni pre zmenu">${inv.accounted?'✓ Accounted':'Not accounted'}</span>` : ''}
+</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">
       <button class="btn btn-sm" onclick="viewInvoice(${inv.id})">View</button>
       ${inv.status!=='void'?`<button class="btn btn-sm" onclick="editInvoice(${inv.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="voidInvoice(${inv.id})">Void</button>`:''}
