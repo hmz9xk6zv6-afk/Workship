@@ -85,7 +85,7 @@ tr:last-child td{border-bottom:none}
 </style>
 </head>
 <body>
-
+ 
 <!-- LOGIN SCREEN -->
 <div id="login-screen" style="display:flex;min-height:100vh;align-items:center;justify-content:center;background:#f5f0e8">
   <div style="background:#fff;border-radius:16px;padding:40px;width:100%;max-width:400px;margin:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
@@ -107,7 +107,7 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 </div>
-
+ 
 <div class="app" style="display:none" id="main-app">
 <div class="ws-header">
   <div>
@@ -129,7 +129,7 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 </div>
-
+ 
 <!-- MODAL -->
 <div class="modal-overlay" id="job-modal">
   <div class="modal">
@@ -144,7 +144,7 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 </div>
-
+ 
 <!-- SCHEDULE -->
 <div id="tab-schedule" class="tab active">
   <div class="metrics-row">
@@ -223,7 +223,7 @@ tr:last-child td{border-bottom:none}
     <tbody id="jobs-tbody"></tbody></table>
   </div>
 </div>
-
+ 
 <!-- MOT -->
 <div id="tab-mot" class="tab">
   <div class="ws-card">
@@ -267,8 +267,8 @@ tr:last-child td{border-bottom:none}
     <tbody id="mot-tbody"></tbody></table>
   </div>
 </div>
-
-
+ 
+ 
 <!-- ROAD TAX -->
 <div id="tab-roadtax" class="tab">
   <div class="ws-card">
@@ -312,7 +312,7 @@ tr:last-child td{border-bottom:none}
     <tbody id="tax-tbody"></tbody></table>
   </div>
 </div>
-
+ 
 <!-- FLEET -->
 <div id="tab-fleet" class="tab">
   <div class="metrics-row">
@@ -338,7 +338,7 @@ tr:last-child td{border-bottom:none}
     <tbody id="fleet-tbody"></tbody></table>
   </div>
 </div>
-
+ 
 <!-- SERVICE LOG -->
 <div id="tab-servicelog" class="tab">
   <div class="metrics-row">
@@ -441,7 +441,7 @@ tr:last-child td{border-bottom:none}
     </table>
   </div>
 </div>
-
+ 
 <!-- INVOICES -->
 <div id="tab-invoices" class="tab">
   <div class="metrics-row">
@@ -449,7 +449,7 @@ tr:last-child td{border-bottom:none}
     <div class="ws-metric"><div class="ws-metric-label">Pending jobs</div><div class="ws-metric-value" id="inv-pending-count" style="color:#856404">—</div></div>
     <div class="ws-metric"><div class="ws-metric-label">Customers</div><div class="ws-metric-value" id="inv-customers">—</div></div>
   </div>
-
+ 
   <!-- CREATE INVOICE FROM SERVICE LOG -->
   <div class="ws-card">
     <p class="ws-section-label">Create invoice from Service Log</p>
@@ -466,7 +466,7 @@ tr:last-child td{border-bottom:none}
         <input type="date" id="inv-date">
       </div>
     </div>
-
+ 
     <div id="inv-new-customer-form" style="display:none;background:#f5f0e8;border-radius:8px;padding:14px;margin-top:12px">
       <p class="ws-section-label" style="margin-bottom:12px">New customer</p>
       <div class="form-row">
@@ -490,9 +490,9 @@ tr:last-child td{border-bottom:none}
         <button class="btn btn-sm" onclick="document.getElementById('inv-new-customer-form').style.display='none';document.getElementById('inv-customer').value=''">Cancel</button>
       </div>
     </div>
-
+ 
     <div id="inv-customer-preview" style="display:none;margin-top:8px;padding:10px 14px;background:#f5f0e8;border-radius:8px;font-size:12px;color:#1e1c1b;line-height:1.8"></div>
-
+ 
     <!-- SELECT SERVICE LOG RECORDS -->
     <div id="inv-records-section" style="display:none;margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -501,7 +501,7 @@ tr:last-child td{border-bottom:none}
       </div>
       <div id="inv-records-list"></div>
     </div>
-
+ 
     <div style="margin-top:8px">
       <label>Notes</label>
       <input type="text" id="inv-notes" placeholder="e.g. Payment is due within 14 days" value="Payment is due within 14 days">
@@ -511,16 +511,16 @@ tr:last-child td{border-bottom:none}
       <button class="btn" onclick="previewInvoice()">Preview</button>
     </div>
   </div>
-
+ 
   <!-- SAVED INVOICES -->
   <div class="ws-card">
     <p class="ws-section-label">Invoice history</p>
     <table>
-      <thead><tr><th>Number</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Number</th><th>Customer</th><th>Date</th><th>Ex VAT</th><th>Total</th><th>Status</th><th></th></tr></thead>
       <tbody id="saved-invoices-tbody"></tbody>
     </table>
   </div>
-
+ 
   <!-- CUSTOMERS -->
   <div class="ws-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -532,7 +532,7 @@ tr:last-child td{border-bottom:none}
       <tbody id="customers-tbody"></tbody>
     </table>
   </div>
-
+ 
   <!-- INVOICE PREVIEW MODAL -->
   <div id="inv-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;overflow-y:auto;padding:20px">
     <div style="max-width:800px;margin:0 auto">
@@ -544,9 +544,9 @@ tr:last-child td{border-bottom:none}
     </div>
   </div>
 </div>
-
+ 
 </div>
-
+ 
 <script>
 const SUPA_URL='https://hyhufujgxcvcttfxhwbd.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5aHVmdWpneGN2Y3R0Znhod2JkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NzcwNzgsImV4cCI6MjA5NDE1MzA3OH0.ssIvQZAvwi5SLYUMmiMHUBkMvRcSLmMVMU_OylwswVA';
@@ -554,22 +554,22 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY);
 const SLOTS=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
 let jobs=[],motData={},vehicles=[],weekOffset=0,modalJobId=null;
 let expenses=[],priceList=[],expLines=[],currentExpMake='',editingExpenseId=null;
-
+ 
 function setSyncStatus(ok,msg){const el=document.getElementById('sync-status');el.textContent=msg;el.className='ws-sync '+(ok?'ok':'err');}
-
+ 
 async function loadVehicles(){
   const{data}=await sb.from('vehicles').select('*').order('reg');
   vehicles=data||[];
   populateVehicleDropdown();
   populateExpVehicleDropdown();
 }
-
+ 
 function populateVehicleDropdown(){
   const sel=document.getElementById('job-vrn');
   sel.innerHTML='<option value="">Select vehicle...</option><option value="__manual__">— Other (type manually) —</option>';
   vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
 }
-
+ 
 function populateExpVehicleDropdown(){
   const sel=document.getElementById('exp-vrn');
   if(!sel)return;
@@ -578,18 +578,18 @@ function populateExpVehicleDropdown(){
   vehicles.filter(v=>v.active).forEach(v=>{sel.add(new Option(`${v.reg} \u2014 ${v.make} ${v.model}`,v.reg));});
   if(cur)sel.value=cur;
 }
-
+ 
 async function loadJobs(){
   const{data,error}=await sb.from('jobs').select('*').order('date',{ascending:false});
   if(error){setSyncStatus(false,'DB error');return;}
   jobs=data||[];setSyncStatus(true,'Live \u2713');renderSchedule();
 }
-
+ 
 async function loadMOT(){
   const{data}=await sb.from('mot_data').select('*');
   motData={};(data||[]).forEach(r=>{motData[r.reg]=r.expiry;});renderMOT();
 }
-
+ 
 async function loadExpenses(){
   const filter=document.getElementById('exp-filter-invoiced')?.value||'all';
   let query=sb.from('expenses').select('*, expense_lines(*)').order('job_date',{ascending:false});
@@ -599,19 +599,19 @@ async function loadExpenses(){
   expenses=data||[];
   renderExpenses();
 }
-
+ 
 async function loadPriceList(){
   const{data}=await sb.from('price_list').select('*').order('item');
   priceList=data||[];renderPriceList();
 }
-
+ 
 function onJobVehicleChange(){
   const val=document.getElementById('job-vrn').value;
   const wrap=document.getElementById('job-vrn-manual-wrap');
   if(val==='__manual__') wrap.style.display='block';
   else wrap.style.display='none';
 }
-
+ 
 function checkNotesRequired(){
   const type=document.getElementById('job-type').value;
   const req=document.getElementById('notes-required');
@@ -619,11 +619,11 @@ function checkNotesRequired(){
   if(type==='Other'){req.style.display='inline';notes.placeholder='Required \u2014 describe the job...';}
   else{req.style.display='none';notes.placeholder='Optional...';}
 }
-
+ 
 function fmt(d){return d.toISOString().split('T')[0];}
 function fmtDisp(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
 function getWeekDates(off){const now=new Date(),day=now.getDay()||7,mon=new Date(now);mon.setDate(now.getDate()-day+1+off*7);return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
-
+ 
 function showTab(t,btn){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.ws-nav-btn').forEach(el=>el.classList.remove('active'));
@@ -635,7 +635,7 @@ function showTab(t,btn){
   if(t==='servicelog'){loadExpenses();loadPriceList();populateExpVehicleDropdown();}
   if(t==='invoices'){loadInvoices();}
 }
-
+ 
 function renderSchedule(){
   const days=getWeekDates(weekOffset),today=fmt(new Date());
   document.getElementById('week-label').textContent=fmtDisp(days[0])+' \u2014 '+fmtDisp(days[6])+' '+days[0].getFullYear();
@@ -674,18 +674,18 @@ function renderSchedule(){
   }).join(''):'<span style="color:#555">No jobs this week</span>';
   renderJobsTable();
 }
-
+ 
 function openModal(id){
   const j=jobs.find(j=>j.id===id);if(!j)return;
   modalJobId=id;
   const v=vehicles.find(v=>v.reg===j.reg)||{make:'?',model:'?'};
   document.getElementById('modal-title').textContent=`${j.reg} — ${j.type}`;
-
+ 
   const timeOpts=['07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'].map(t=>`<option value="${t}" ${j.slot===t?'selected':''}>${t}</option>`).join('');
   const durOpts=[1,2,3,4,5,6,7,8].map(h=>`<option value="${h}" ${(j.hours||1)==h?'selected':''}>${h} hour${h>1?'s':''}</option>`).join('');
   const typeOpts=['Service','MOT prep','Tyres','Inspection','Cleaning','Full Valeting','Brake change','Suspension Change','Diagnostic','Other'].map(t=>`<option value="${t}" ${j.type===t?'selected':''}>${t}</option>`).join('');
   const assignOpts=['Peter','Dawid','Other'].map(a=>`<option value="${a}" ${j.assigned===a?'selected':''}>${a}</option>`).join('');
-
+ 
   document.getElementById('modal-body').innerHTML=`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div><label style="font-size:10px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#8a8278;display:block;margin-bottom:4px">Date</label>
@@ -709,7 +709,7 @@ function openModal(id){
   document.getElementById('job-modal').classList.add('open');
 }
 function closeModal(){document.getElementById('job-modal').classList.remove('open');modalJobId=null;}
-
+ 
 async function saveJobEdits(){
   if(!modalJobId)return;
   const date=document.getElementById('edit-job-date')?.value;
@@ -728,7 +728,7 @@ async function modalSetStatus(s){
   closeModal();loadJobs();
 }
 async function modalDelete(){if(!modalJobId)return;if(!confirm('Delete this job?'))return;await sb.from('jobs').delete().eq('id',modalJobId);closeModal();loadJobs();}
-
+ 
 function renderJobsTable(){
   const sorted=[...jobs].sort((a,b)=>b.date.localeCompare(a.date));
   const veh=r=>vehicles.find(v=>v.reg===r)||{make:'?'};
@@ -745,7 +745,7 @@ function renderJobsTable(){
       <button class="btn btn-sm btn-danger" onclick="removeJob('${j.id}')">\u2715</button>
     </td></tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:20px;color:#8a8278">No jobs yet</td></tr>';
 }
-
+ 
 function prefillDate(date,slot){document.getElementById('job-date').value=date;document.getElementById('job-start').value=slot;}
 async function addJob(){
   const selVal=document.getElementById('job-vrn').value;
@@ -769,7 +769,7 @@ async function removeJob(id){if(confirm('Delete this job?')){await sb.from('jobs
 function prevWeek(){weekOffset--;loadJobs();}
 function nextWeek(){weekOffset++;loadJobs();}
 function goToday(){weekOffset=0;loadJobs();}
-
+ 
 async function dvsa(reg){
   const r=await fetch(`/api/mot?reg=${reg.toUpperCase().replace(/\s/g,'')}`);
   if(!r.ok)return null;
@@ -839,7 +839,7 @@ function renderMOT(){
   }).join('');
 }
 async function singleDVSA(reg,btn){btn.textContent='...';btn.disabled=true;const result=await dvsa(reg);if(result){await setMOT(reg,result.expiry);}btn.textContent='\u21bb';btn.disabled=false;renderMOT();}
-
+ 
 function renderFleet(){
   document.getElementById('f-total').textContent=vehicles.length;
   document.getElementById('f-active').textContent=vehicles.filter(v=>v.active).length;
@@ -868,7 +868,7 @@ async function addVehicle(){
 }
 async function toggleVehicle(id,active){await sb.from('vehicles').update({active:!active}).eq('id',id);await loadVehicles();renderFleet();}
 async function deleteVehicle(id){if(!confirm('Permanently delete?'))return;await sb.from('vehicles').delete().eq('id',id);await loadVehicles();renderFleet();}
-
+ 
 // ============ SERVICE LOG ============
 function onExpVehicleChange(){
   const val=document.getElementById('exp-vrn').value;
@@ -878,12 +878,12 @@ function onExpVehicleChange(){
   else if(val){manualWrap.style.display='none';const v=vehicles.find(v=>v.reg===val);currentExpMake=v?v.make:'';makeDisplay.style.display='block';makeDisplay.textContent='Make: '+currentExpMake;}
   else{manualWrap.style.display='none';makeDisplay.style.display='none';currentExpMake='';}
 }
-
+ 
 function getPrice(item){return priceList.find(p=>p.item===item)||null;}
-
+ 
 function addExpLine(){expLines.push({item:'',other_desc:'',quantity:1,unit:'unit',hours:0,unit_price:0,total:0,is_labour:false});renderExpLines();}
 function removeExpLine(i){expLines.splice(i,1);renderExpLines();}
-
+ 
 function onLineItemChange(i,val){
   expLines[i].item=val;
   if(val==='Other'){expLines[i].unit_price=0;expLines[i].unit='unit';expLines[i].is_labour=false;}
@@ -894,7 +894,7 @@ function onLineOtherDescChange(i,val){expLines[i].other_desc=val;}
 function onLineQtyChange(i,val){expLines[i].quantity=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
 function onLineHoursChange(i,val){expLines[i].hours=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
 function onLinePriceChange(i,val){expLines[i].unit_price=parseFloat(val)||0;recalcLine(i);updateExpTotal();}
-
+ 
 function recalcLine(i){
   const l=expLines[i];
   if(l.unit==='fixed') l.total=l.unit_price;
@@ -902,7 +902,7 @@ function recalcLine(i){
   else l.total=(l.quantity||0)*l.unit_price;
   updateExpTotal();
 }
-
+ 
 function updateExpTotal(){
   const subtotal=expLines.reduce((a,l)=>a+(l.total||0),0);
   const vat=subtotal*0.2;
@@ -914,7 +914,7 @@ function updateExpTotal(){
   if(v)v.textContent='\u00a3'+vat.toFixed(2);
   if(t)t.textContent='\u00a3'+total.toFixed(2);
 }
-
+ 
 function renderExpLines(){
   // FIX: dynamically build item list from priceList (loaded from DB), with Other always last
   const COMMON_ITEMS=[
@@ -947,7 +947,7 @@ function renderExpLines(){
   }).join('');
   updateExpTotal();
 }
-
+ 
 function resetExpenseForm(){
   document.getElementById('exp-vrn').value='';
   document.getElementById('exp-date').value='';
@@ -960,7 +960,7 @@ function resetExpenseForm(){
   const btn=document.querySelector('[onclick="saveExpense()"]');
   if(btn)btn.textContent='Save job record';
 }
-
+ 
 async function saveExpense(){
   const selVal=document.getElementById('exp-vrn').value;
   const date=document.getElementById('exp-date').value;
@@ -971,7 +971,7 @@ async function saveExpense(){
   if(expLines.length===0){alert('Add at least one line item.');return;}
   if(expLines.some(l=>!l.item)){alert('All lines must have an item selected.');return;}
   if(expLines.some(l=>l.item==='Other'&&!l.other_desc)){alert('Please describe the "Other" item.');return;}
-
+ 
   if(editingExpenseId){
     const mileageUpd=parseInt(document.getElementById('exp-mileage').value)||null;
     await sb.from('expenses').update({reg,make,job_date:date,notes:document.getElementById('exp-notes').value,mileage:mileageUpd}).eq('id',editingExpenseId);
@@ -988,7 +988,7 @@ async function saveExpense(){
   resetExpenseForm();
   loadExpenses();
 }
-
+ 
 function editExpense(id){
   const e=expenses.find(e=>e.id===id);if(!e)return;
   editingExpenseId=id;
@@ -1008,7 +1008,7 @@ function editExpense(id){
   if(btn)btn.textContent='Update job record';
   document.getElementById('tab-servicelog').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
-
+ 
 function renderExpenses(){
   const today=new Date();
   const thisMonth=expenses.filter(e=>{const d=new Date(e.job_date);return d.getMonth()===today.getMonth()&&d.getFullYear()===today.getFullYear();});
@@ -1042,11 +1042,11 @@ function renderExpenses(){
       +'</td></tr>';
   }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:#8a8278">No records yet</td></tr>';
 }
-
+ 
 async function markInvoiced(id){await sb.from('expenses').update({invoiced:true}).eq('id',id);loadExpenses();}
 async function markPending(id){await sb.from('expenses').update({invoiced:false}).eq('id',id);loadExpenses();}
 async function deleteExpense(id){if(!confirm('Delete this record?'))return;await sb.from('expenses').delete().eq('id',id);loadExpenses();}
-
+ 
 function renderPriceList(){
   const tbody=document.getElementById('pricelist-tbody');
   if(!tbody)return;
@@ -1067,11 +1067,11 @@ async function savePriceItem(){
   loadPriceList();
 }
 async function deletePriceItem(id){if(!confirm('Delete?'))return;await sb.from('price_list').delete().eq('id',id);loadPriceList();}
-
-
+ 
+ 
 let currentUser = null;
 let userRole = null;
-
+ 
 async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -1087,7 +1087,7 @@ async function doLogin(){
   }
   await initApp(data.user);
 }
-
+ 
 async function doLogout(){
   await sb.auth.signOut();
   currentUser=null;userRole=null;
@@ -1096,7 +1096,7 @@ async function doLogout(){
   document.getElementById('login-email').value='';
   document.getElementById('login-password').value='';
 }
-
+ 
 async function initApp(user){
   currentUser=user;
   const {data} = await sb.from('user_roles').select('*').eq('user_id', user.id).single();
@@ -1115,7 +1115,7 @@ async function initApp(user){
   loadVehicles().then(()=>loadJobs());
   loadMOT();
 }
-
+ 
 function applyRoleUI(){
   if(!userRole) return;
   const isAdmin = userRole.role === 'admin';
@@ -1126,22 +1126,22 @@ function applyRoleUI(){
     if(navInv) navInv.style.display='none';
   }
 }
-
+ 
 // ============ ROAD TAX ============
 let taxData = {};
-
+ 
 async function loadTaxData(){
   const {data} = await sb.from('tax_data').select('*');
   taxData = {};
   (data||[]).forEach(r=>{taxData[r.reg]=r;});
   renderTax();
 }
-
+ 
 async function setTax(reg, val){
   await sb.from('tax_data').upsert({reg, status:val.taxStatus, due_date:val.taxDueDate, updated_at:new Date().toISOString()});
   taxData[reg] = {status:val.taxStatus, due_date:val.taxDueDate};
 }
-
+ 
 async function lookupTax(){
   const reg = document.getElementById('tax-lookup').value.trim().toUpperCase().replace(/\s/g,'');
   if(!reg){alert('Enter a registration.');return;}
@@ -1164,7 +1164,7 @@ async function lookupTax(){
     renderTax();
   }catch(e){el.innerHTML='<div style="padding:10px;background:#fef3cd;border-radius:8px;font-size:12px;color:#856404">Error: '+e.message+'</div>';}
 }
-
+ 
 async function checkAllTax(){
   const btn = document.getElementById('check-tax-btn');
   const prog = document.getElementById('check-tax-progress');
@@ -1186,7 +1186,7 @@ async function checkAllTax(){
   btn.disabled=false;btn.textContent='&#128663; Check all fleet';
   renderTax();
 }
-
+ 
 function renderTax(){
   const today = new Date();
   let active = vehicles.filter(v=>v.active);
@@ -1227,7 +1227,7 @@ function renderTax(){
     <td><button class="btn btn-sm" onclick="singleTax('${v.reg}',this)">&#8635;</button></td></tr>`;
   }).join('');
 }
-
+ 
 async function singleTax(reg,btn){
   btn.textContent='...';btn.disabled=true;
   try{
@@ -1238,10 +1238,10 @@ async function singleTax(reg,btn){
   btn.textContent='↻';btn.disabled=false;
   renderTax();
 }
-
+ 
 // ============ INVOICES ============
 let customers = [], invoiceCounter = 0, pendingExpenses = [], savedInvoices = [], editingInvoiceId = null;
-
+ 
 async function loadInvoices(){
   const {data: cust} = await sb.from('customers').select('*').order('name');
   customers = cust || [];
@@ -1251,7 +1251,7 @@ async function loadInvoices(){
   pendingExpenses = pending || [];
   const {data: invs} = await sb.from('invoices').select('*, invoice_lines(*)').order('created_at', {ascending: false});
   savedInvoices = invs || [];
-
+ 
   renderCustomers();
   populateCustomerDropdown();
   renderSavedInvoices();
@@ -1261,7 +1261,7 @@ async function loadInvoices(){
   document.getElementById('inv-date').value = new Date().toISOString().split('T')[0];
   renderInvRecords();
 }
-
+ 
 function populateCustomerDropdown(){
   const sel = document.getElementById('inv-customer');
   const cur = sel.value;
@@ -1269,7 +1269,7 @@ function populateCustomerDropdown(){
   customers.forEach(c => sel.add(new Option(c.name, c.id)));
   if(cur) sel.value = cur;
 }
-
+ 
 function onInvCustomerChange(){
   const val = document.getElementById('inv-customer').value;
   const preview = document.getElementById('inv-customer-preview');
@@ -1293,7 +1293,7 @@ function onInvCustomerChange(){
     recordsSection.style.display = 'none';
   }
 }
-
+ 
 function renderInvRecords(){
   const container = document.getElementById('inv-records-list');
   if(!container) return;
@@ -1320,19 +1320,19 @@ function renderInvRecords(){
       +'</div></div>';
   }).join('');
 }
-
+ 
 function toggleAllRecords(){
   const checks = document.querySelectorAll('.inv-record-check');
   const allChecked = Array.from(checks).every(c=>c.checked);
   checks.forEach(c=>c.checked=!allChecked);
 }
-
+ 
 function getSelectedExpenses(){
   const checked = document.querySelectorAll('.inv-record-check:checked');
   const ids = Array.from(checked).map(c=>parseInt(c.dataset.id));
   return pendingExpenses.filter(e=>ids.includes(e.id));
 }
-
+ 
 async function saveNewCustomer(){
   const name = document.getElementById('nc-name').value.trim();
   if(!name){alert('Enter company name.');return;}
@@ -1355,7 +1355,7 @@ async function saveNewCustomer(){
   document.getElementById('inv-customers').textContent = customers.length;
   ['nc-name','nc-address','nc-city','nc-postcode','nc-email','nc-vat','nc-reg','nc-ref'].forEach(id=>document.getElementById(id).value='');
 }
-
+ 
 async function deleteCustomer(id){
   if(!confirm('Delete this customer?'))return;
   await sb.from('customers').delete().eq('id',id);
@@ -1364,7 +1364,7 @@ async function deleteCustomer(id){
   populateCustomerDropdown();
   document.getElementById('inv-customers').textContent = customers.length;
 }
-
+ 
 function renderCustomers(){
   const tbody = document.getElementById('customers-tbody');
   if(!tbody)return;
@@ -1376,7 +1376,7 @@ function renderCustomers(){
     <td><button class="btn btn-sm btn-danger" onclick="deleteCustomer(${c.id})">&times;</button></td>
   </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:#8a8278">No customers yet</td></tr>';
 }
-
+ 
 function buildInvoiceLines(selectedExpenses){
   const grouped = {};
   selectedExpenses.forEach(e => {
@@ -1392,22 +1392,22 @@ function buildInvoiceLines(selectedExpenses){
   });
   return lines;
 }
-
+ 
 function buildInvoiceHTML(invNumber, customer, date, lines, notes, status){
   const _d=new Date(date);const fmtDate=_d.getDate().toString().padStart(2,'0')+'.'+((_d.getMonth()+1).toString().padStart(2,'0'))+'.'+_d.getFullYear();
   const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
   const vat = subtotal*0.2;
   const total = subtotal+vat;
-
+ 
   const lineRows = lines.map(l=>`<tr>
     <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${l.description}</td>
     <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${l.qty}</td>
     <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">£ ${(l.unit_price||0).toFixed(2)}</td>
     <td style="padding:10px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">£ ${(l.total||0).toFixed(2)}</td>
   </tr>`).join('');
-
+ 
   const voidBanner = status==='void' ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-30deg);font-size:80px;font-weight:900;color:rgba(220,38,38,0.15);white-space:nowrap;pointer-events:none">VOID</div>' : '';
-
+ 
   return `<div style="font-family:Arial,sans-serif;color:#1e1c1b;max-width:750px;margin:0 auto;position:relative">
     <div id="inv-meta" data-customer="${customer.name.replace(/"/g,'')}" data-number="${invNumber}" data-date="${fmtDate}" style="display:none"></div>
     ${voidBanner}
@@ -1458,14 +1458,14 @@ function buildInvoiceHTML(invNumber, customer, date, lines, notes, status){
     </div>
   </div>`;
 }
-
+ 
 function previewInvoice(){
   const custId = document.getElementById('inv-customer').value;
   if(!custId||custId==='__new__'){alert('Select a customer.');return;}
   const customer = customers.find(c=>c.id==custId);
   const date = document.getElementById('inv-date').value;
   const notes = document.getElementById('inv-notes').value;
-
+ 
   let lines = [];
   if(editingInvoiceId){
     const inv = savedInvoices.find(i=>i.id===editingInvoiceId);
@@ -1479,7 +1479,7 @@ function previewInvoice(){
   document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, lines, notes, 'active');
   document.getElementById('inv-preview-overlay').style.display='block';
 }
-
+ 
 async function generateInvoice(){
   const custId = document.getElementById('inv-customer').value;
   if(!custId||custId==='__new__'){alert('Select a customer.');return;}
@@ -1493,7 +1493,7 @@ async function generateInvoice(){
   const lines = buildInvoiceLines(selected);
   const subtotal = lines.reduce((a,l)=>a+(l.total||0),0);
   const vat = subtotal*0.2;
-
+ 
   const {data: inv, error} = await sb.from('invoices').insert([{
     invoice_number: invNumber,
     customer_id: parseInt(custId),
@@ -1506,27 +1506,27 @@ async function generateInvoice(){
     status: 'active'
   }]).select().single();
   if(error){alert('Error saving invoice: '+error.message);return;}
-
+ 
   await sb.from('invoice_lines').insert(lines.map(l=>({invoice_id:inv.id, description:l.description, qty:l.qty, unit_price:l.unit_price, total:l.total})));
   await sb.from('invoice_counter').update({last_number: nextNum}).eq('id',1);
   invoiceCounter = nextNum;
-
+ 
   const ids = selected.map(e=>e.id);
   await sb.from('expenses').update({invoiced:true}).in('id', ids);
   pendingExpenses = pendingExpenses.filter(e=>!ids.includes(e.id));
-
+ 
   inv.invoice_lines = lines.map((l,i)=>({...l, id:i}));
   savedInvoices.unshift(inv);
   renderSavedInvoices();
   renderInvRecords();
   document.getElementById('inv-next-num').textContent = 'INV-' + String(invoiceCounter+1).padStart(3,'0');
   document.getElementById('inv-pending-count').textContent = pendingExpenses.length + ' jobs';
-
+ 
   document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(invNumber, customer, date, lines, notes, 'active');
   document.getElementById('inv-preview-overlay').style.display='block';
   setTimeout(()=>printInvoice(), 400);
 }
-
+ 
 function editInvoice(id){
   const inv = savedInvoices.find(i=>i.id===id);
   if(!inv)return;
@@ -1535,17 +1535,17 @@ function editInvoice(id){
   onInvCustomerChange();
   document.getElementById('inv-date').value = inv.invoice_date;
   document.getElementById('inv-notes').value = inv.notes||'';
-
+ 
   const recordsSection = document.getElementById('inv-records-section');
   recordsSection.style.display = 'block';
-
+ 
   const existingLinesDiv = document.getElementById('inv-existing-lines') || (() => {
     const d = document.createElement('div');
     d.id = 'inv-existing-lines';
     recordsSection.insertBefore(d, recordsSection.firstChild);
     return d;
   })();
-
+ 
   const invLines = inv.invoice_lines || [];
   existingLinesDiv.innerHTML = invLines.length ? '<p class="ws-section-label" style="margin:8px 0 6px">Current invoice lines</p>'
     + invLines.map((l,i) => '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:#fff3cd;border-radius:8px;margin-bottom:4px;font-size:12px">'
@@ -1556,13 +1556,13 @@ function editInvoice(id){
       +'</div>').join('')
     + '<div style="height:1px;background:rgba(0,0,0,0.1);margin:10px 0"></div><p class="ws-section-label" style="margin:0 0 6px">Add more jobs</p>'
     : '';
-
+ 
   const saveBtn = document.getElementById('inv-generate-btn');
   if(saveBtn){saveBtn.textContent='Update invoice';saveBtn.setAttribute('onclick','saveEditedInvoice()');}
-
+ 
   document.getElementById('tab-invoices').querySelector('.ws-card').scrollIntoView({behavior:'smooth'});
 }
-
+ 
 async function removeInvLine(invoiceId, lineId, btn){
   btn.disabled=true;
   await sb.from('invoice_lines').delete().eq('id', lineId);
@@ -1578,31 +1578,31 @@ async function removeInvLine(invoiceId, lineId, btn){
   renderSavedInvoices();
   editInvoice(invoiceId);
 }
-
+ 
 async function saveEditedInvoice(){
   if(!editingInvoiceId)return;
   const custId = document.getElementById('inv-customer').value;
   const customer = customers.find(c=>c.id==custId);
   const date = document.getElementById('inv-date').value;
   const notes = document.getElementById('inv-notes').value;
-
+ 
   await sb.from('invoices').update({
     customer_id: parseInt(custId),
     customer_name: customer.name,
     invoice_date: date,
     notes
   }).eq('id', editingInvoiceId);
-
+ 
   const inv = savedInvoices.find(i=>i.id===editingInvoiceId);
   if(inv){inv.customer_id=parseInt(custId);inv.customer_name=customer.name;inv.invoice_date=date;inv.notes=notes;}
   renderSavedInvoices();
-
+ 
   editingInvoiceId = null;
   const saveBtn = document.getElementById('inv-generate-btn');
   if(saveBtn){saveBtn.textContent='&#128203; Generate PDF';saveBtn.setAttribute('onclick','generateInvoice()');}
   alert('Invoice updated!');
 }
-
+ 
 async function voidInvoice(id){
   if(!confirm('Mark this invoice as VOID? This cannot be undone.'))return;
   await sb.from('invoices').update({status:'void'}).eq('id',id);
@@ -1610,7 +1610,7 @@ async function voidInvoice(id){
   if(inv) inv.status='void';
   renderSavedInvoices();
 }
-
+ 
 function viewInvoice(id){
   const inv = savedInvoices.find(i=>i.id===id);
   if(!inv)return;
@@ -1619,14 +1619,17 @@ function viewInvoice(id){
   document.getElementById('inv-preview-content').innerHTML = buildInvoiceHTML(inv.invoice_number, customer, inv.invoice_date, lines, inv.notes, inv.status);
   document.getElementById('inv-preview-overlay').style.display='block';
 }
-
+ 
 function renderSavedInvoices(){
   const tbody = document.getElementById('saved-invoices-tbody');
   if(!tbody)return;
-  tbody.innerHTML = savedInvoices.length ? savedInvoices.map(inv=>`<tr style="${inv.status==='void'?'opacity:0.5':''}">
+  tbody.innerHTML = savedInvoices.length ? savedInvoices.map(inv=>{
+    const exVat = (inv.subtotal!==null && inv.subtotal!==undefined) ? inv.subtotal : (inv.total||0)/1.2;
+    return `<tr style="${inv.status==='void'?'opacity:0.5':''}">
     <td style="font-weight:700;color:${inv.status==='void'?'#dc2626':'#1e1c1b'}">${inv.invoice_number}${inv.status==='void'?' (VOID)':''}</td>
     <td style="font-weight:600">${inv.customer_name}</td>
     <td style="color:#8a8278;font-size:12px">${inv.invoice_date}</td>
+    <td style="color:#8a8278">£${exVat.toFixed(2)}</td>
     <td style="font-weight:700">£${(inv.total||0).toFixed(2)}</td>
     <td style="display:flex;gap:4px;flex-wrap:wrap">
   <span class="badge ${inv.status==='void'?'badge-pending':'badge-done'}">${inv.status}</span>
@@ -1637,7 +1640,8 @@ function renderSavedInvoices(){
       <button class="btn btn-sm" onclick="viewInvoice(${inv.id})">View</button>
       ${inv.status!=='void'?`<button class="btn btn-sm" onclick="editInvoice(${inv.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="voidInvoice(${inv.id})">Void</button>`:''}
     </td>
-  </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#8a8278">No invoices yet</td></tr>';
+  </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a8278">No invoices yet</td></tr>';
 }
 async function toggleInvSent(id){
   const inv = savedInvoices.find(i=>i.id===id);
@@ -1647,7 +1651,7 @@ async function toggleInvSent(id){
   inv.sent = newVal;
   renderSavedInvoices();
 }
-
+ 
 async function toggleInvAccounted(id){
   const inv = savedInvoices.find(i=>i.id===id);
   if(!inv)return;
@@ -1656,7 +1660,7 @@ async function toggleInvAccounted(id){
   inv.accounted = newVal;
   renderSavedInvoices();
 }
-
+ 
 function printInvoice(){
   const content = document.getElementById('inv-preview-content').innerHTML;
   const meta = document.getElementById('inv-meta');
@@ -1664,14 +1668,14 @@ function printInvoice(){
   const invNum = meta ? meta.dataset.number : 'Invoice';
   const invDate = meta ? meta.dataset.date.replace(/\./g,'-') : '';
   const filename = [custName, invNum, invDate].filter(Boolean).join('_');
-
+ 
   const win = window.open('','_blank');
   win.document.write('<!DOCTYPE html><html><head><title>'+filename+'</title><style>body{margin:30px;font-family:Arial,sans-serif}@media print{@page{size:A4 portrait;margin:15mm}body{margin:0}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}</style></head><body>'+content+'</body></html>');
   win.document.close();
   win.focus();
   setTimeout(()=>win.print(),500);
 }
-
+ 
 sb.auth.getSession().then(({data:{session}})=>{
   if(session){
     initApp(session.user);
@@ -1679,7 +1683,7 @@ sb.auth.getSession().then(({data:{session}})=>{
     document.getElementById('login-screen').style.display='flex';
   }
 });
-
+ 
 setSyncStatus(false,'Connecting...');
 sb.channel('workship-live')
   .on('postgres_changes',{event:'*',schema:'public',table:'jobs'},()=>loadJobs())
